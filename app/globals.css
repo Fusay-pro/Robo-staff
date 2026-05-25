@@ -1,26 +1,87 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --font-sans: "Plus Jakarta Sans", sans-serif;
+
+  --color-primary: #006591;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #0ea5e9;
+  --color-on-primary-container: #003751;
+
+  --color-secondary: #006686;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #93dbff;
+  --color-on-secondary-container: #006180;
+  --color-secondary-fixed: #c0e8ff;
+  --color-on-secondary-fixed: #001e2b;
+
+  --color-tertiary: #bc0b3b;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #ffdad9;
+  --color-on-tertiary-container: #400010;
+
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  --color-success: #2F7A4D;
+  --color-on-success: #ffffff;
+  --color-success-container: #E2F0E7;
+  --color-on-success-container: #1a4a2e;
+
+  --color-warning: #B8741A;
+  --color-warning-container: #F8EAD3;
+  --color-on-warning-container: #4a2e00;
+
+  --color-surface: #faf9ff;
+  --color-surface-dim: #d8d9e4;
+  --color-surface-bright: #faf9ff;
+  --color-surface-variant: #e1e2ed;
+  --color-surface-tint: #0ea5e9;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f2f3fe;
+  --color-surface-container: #ecedf8;
+  --color-surface-container-high: #e6e7f2;
+  --color-surface-container-highest: #e1e2ed;
+  --color-on-surface: #191b23;
+  --color-on-surface-variant: #3e4850;
+  --color-inverse-surface: #2d3038;
+  --color-inverse-on-surface: #eff0fb;
+
+  --color-outline: #6e7881;
+  --color-outline-variant: #dde3ea;
+
+  --color-background: #faf9ff;
+  --color-on-background: #191b23;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+* { box-sizing: border-box; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
+  -webkit-font-smoothing: antialiased;
 }
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #bec8d2; border-radius: 10px; }

@@ -20,7 +20,7 @@ client.interceptors.response.use(
   async (error) => {
     if (!error.config) return Promise.reject(error);
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
-    if (error.response?.status === 401 && !original._retry) {
+    if (error.response?.status === 401 && !original._retry && !original.url?.includes('/auth/')) {
       original._retry = true;
       const refresh_token = localStorage.getItem('refresh_token');
       if (refresh_token) {

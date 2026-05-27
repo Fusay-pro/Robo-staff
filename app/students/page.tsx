@@ -94,30 +94,30 @@ export default function StudentsPage() {
 
         {/* Stats row */}
         <div className="grid grid-cols-3 xl:grid-cols-3 gap-4 mb-6">
-          <div className="bg-surface-container-lowest rounded-2xl p-5 flex items-center gap-4 shadow-sm border border-outline-variant/30">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+          <div className="bg-surface-container-lowest rounded-2xl p-3 md:p-5 flex items-center gap-4 shadow-sm border border-outline-variant/30">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 hidden md:flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-primary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>group</span>
             </div>
             <div>
-              <p className="text-2xl font-extrabold text-on-surface">{statsData?.total ?? '—'}</p>
+              <p className="text-xl md:text-2xl font-extrabold text-on-surface">{statsData?.total ?? '—'}</p>
               <p className="text-xs text-on-surface-variant font-medium">{t('students.totalStudents')}</p>
             </div>
           </div>
-          <div className="bg-surface-container-lowest rounded-2xl p-5 flex items-center gap-4 shadow-sm border border-outline-variant/30">
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+          <div className="bg-surface-container-lowest rounded-2xl p-3 md:p-5 flex items-center gap-4 shadow-sm border border-outline-variant/30">
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 hidden md:flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-emerald-700 text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>card_membership</span>
             </div>
             <div>
-              <p className="text-2xl font-extrabold text-on-surface">{statsData?.with_active_package ?? '—'}</p>
+              <p className="text-xl md:text-2xl font-extrabold text-on-surface">{statsData?.with_active_package ?? '—'}</p>
               <p className="text-xs text-on-surface-variant font-medium">{t('students.activePackagesStat')}</p>
             </div>
           </div>
-          <div className="bg-surface-container-lowest rounded-2xl p-5 flex items-center gap-4 shadow-sm border border-outline-variant/30">
-            <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
+          <div className="bg-surface-container-lowest rounded-2xl p-3 md:p-5 flex items-center gap-4 shadow-sm border border-outline-variant/30">
+            <div className="w-10 h-10 rounded-xl bg-orange-100 hidden md:flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-orange-600 text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
             </div>
             <div>
-              <p className="text-2xl font-extrabold text-on-surface">{statsData?.low_classes ?? '—'}</p>
+              <p className="text-xl md:text-2xl font-extrabold text-on-surface">{statsData?.low_classes ?? '—'}</p>
               <p className="text-xs text-on-surface-variant font-medium">{t('students.lowOnClasses')}</p>
             </div>
           </div>

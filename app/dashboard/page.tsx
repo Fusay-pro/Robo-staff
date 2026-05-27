@@ -134,24 +134,29 @@ export default function DashboardPage() {
                   const isFull = fill >= 1;
                   const isSchool = !!s.contract_school_id;
                   return (
-                    <Link key={s.schedule_id} href={`/schedules/${s.schedule_id}`}
-                      className="flex items-center gap-4 p-4 rounded-2xl bg-surface-container-low hover:bg-surface-container hover:-translate-y-0.5 transition-all group cursor-pointer">
-                      {/* Time block */}
-                      <div className="shrink-0 w-16 text-center">
-                        <p className="text-[11px] font-bold text-primary leading-tight">{fmtTime(s.starts_at)}</p>
-                        <div className="w-px h-3 bg-outline-variant/50 mx-auto my-0.5" />
-                        <p className="text-[11px] text-on-surface-variant leading-tight">{fmtTime(s.ends_at)}</p>
-                      </div>
-
-                      {/* Divider */}
-                      <div className="w-px h-10 bg-outline-variant/30 shrink-0" />
-
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-on-surface text-sm truncate group-hover:text-primary transition-colors">
-                          {s.course_name || s.contract_school_name || t('dashboard.session')}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1">
+                    <div key={s.schedule_id}>
+                      {/* Mobile 2-line card */}
+                      <Link href={`/schedules/${s.schedule_id}`}
+                        className="md:hidden block p-3.5 rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all group cursor-pointer">
+                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                          <p className="font-bold text-on-surface text-sm leading-snug group-hover:text-primary transition-colors flex-1">
+                            {s.course_name || s.contract_school_name || t('dashboard.session')}
+                          </p>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {s.max_capacity > 0 && (
+                              <p className={`text-sm font-bold ${isFull ? 'text-error' : 'text-on-surface'}`}>
+                                {s.enrolled_count}/{s.max_capacity}
+                              </p>
+                            )}
+                            {isOwner && (
+                              <button onClick={e => openEdit(s, e)}
+                                className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-primary/10 text-primary transition-all">
+                                <span className="material-symbols-outlined text-[15px]">edit</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-on-surface-variant flex-wrap">
                           {s.robot_type_name && (
                             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                               {s.robot_type_name}
@@ -162,30 +167,64 @@ export default function DashboardPage() {
                               {t('dashboard.school')}
                             </span>
                           )}
+                          <span>{fmtTime(s.starts_at)} – {fmtTime(s.ends_at)}</span>
                         </div>
-                      </div>
+                      </Link>
 
-                      {/* Capacity */}
-                      {s.max_capacity > 0 && (
-                        <div className="shrink-0 text-right">
-                          <p className={`text-sm font-bold ${isFull ? 'text-error' : 'text-on-surface'}`}>
-                            {s.enrolled_count}/{s.max_capacity}
+                      {/* Desktop card */}
+                      <Link href={`/schedules/${s.schedule_id}`}
+                        className="hidden md:flex items-center gap-4 p-4 rounded-2xl bg-surface-container-low hover:bg-surface-container hover:-translate-y-0.5 transition-all group cursor-pointer">
+                        {/* Time block */}
+                        <div className="shrink-0 w-16 text-center">
+                          <p className="text-[11px] font-bold text-primary leading-tight">{fmtTime(s.starts_at)}</p>
+                          <div className="w-px h-3 bg-outline-variant/50 mx-auto my-0.5" />
+                          <p className="text-[11px] text-on-surface-variant leading-tight">{fmtTime(s.ends_at)}</p>
+                        </div>
+
+                        {/* Divider */}
+                        <div className="w-px h-10 bg-outline-variant/30 shrink-0" />
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-on-surface text-sm truncate group-hover:text-primary transition-colors">
+                            {s.course_name || s.contract_school_name || t('dashboard.session')}
                           </p>
-                          <div className="w-16 h-1.5 bg-surface-container rounded-full mt-1 overflow-hidden">
-                            <div className={`h-full rounded-full transition-all ${isFull ? 'bg-error' : 'bg-primary'}`}
-                              style={{ width: `${Math.min(fill * 100, 100)}%` }} />
+                          <div className="flex items-center gap-2 mt-1">
+                            {s.robot_type_name && (
+                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                                {s.robot_type_name}
+                              </span>
+                            )}
+                            {isSchool && (
+                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary/10 text-secondary uppercase tracking-wide">
+                                {t('dashboard.school')}
+                              </span>
+                            )}
                           </div>
                         </div>
-                      )}
 
-                      {/* Owner edit */}
-                      {isOwner && (
-                        <button onClick={e => openEdit(s, e)}
-                          className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-primary transition-all">
-                          <span className="material-symbols-outlined text-[16px]">edit</span>
-                        </button>
-                      )}
-                    </Link>
+                        {/* Capacity */}
+                        {s.max_capacity > 0 && (
+                          <div className="shrink-0 text-right">
+                            <p className={`text-sm font-bold ${isFull ? 'text-error' : 'text-on-surface'}`}>
+                              {s.enrolled_count}/{s.max_capacity}
+                            </p>
+                            <div className="w-16 h-1.5 bg-surface-container rounded-full mt-1 overflow-hidden">
+                              <div className={`h-full rounded-full transition-all ${isFull ? 'bg-error' : 'bg-primary'}`}
+                                style={{ width: `${Math.min(fill * 100, 100)}%` }} />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Owner edit */}
+                        {isOwner && (
+                          <button onClick={e => openEdit(s, e)}
+                            className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-primary transition-all">
+                            <span className="material-symbols-outlined text-[16px]">edit</span>
+                          </button>
+                        )}
+                      </Link>
+                    </div>
                   );
                 })}
               </div>

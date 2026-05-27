@@ -293,6 +293,23 @@ export default function SchedulePage() {
   const selectedSessions = sessionsByDate[selectedDate] ?? [];
   const selectedDateObj  = new Date(selectedDate + 'T00:00:00');
 
+  // Mobile week strip helpers
+  const mobileWeekDow   = selectedDateObj.getDay(); // 0=Sun
+  const mobileWeekStart = new Date(selectedDateObj);
+  mobileWeekStart.setDate(mobileWeekStart.getDate() - (mobileWeekDow === 0 ? 6 : mobileWeekDow - 1));
+  const mobileWeekDays  = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(mobileWeekStart);
+    d.setDate(d.getDate() + i);
+    return d;
+  });
+  const mobileWeekLabel = `${mobileWeekStart.toLocaleDateString('en', { month: 'short', day: 'numeric' })} – ${mobileWeekDays[6].toLocaleDateString('en', { month: 'short', day: 'numeric' })}`;
+  const goMobileWeek = (dir: 1 | -1) => {
+    const d = new Date(selectedDate + 'T00:00:00');
+    d.setDate(d.getDate() + dir * 7);
+    setSelectedDate(toDateStr(d));
+  };
+  const todayStr = toDateStr(today);
+
   // ── mutations ──
   const createMut = useMutation({
     mutationFn: (body: any) => client.post('/schedules', body).then(r => r.data),
@@ -708,7 +725,97 @@ export default function SchedulePage() {
 
         {/* ── CALENDAR VIEW ── */}
         {tab === 'calendar' && (
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <>
+            {/* Mobile week strip + sessions */}
+            <div className="md:hidden space-y-4">
+              <div className="bg-surface-container-low rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <button onClick={() => goMobileWeek(-1)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container transition-colors">
+                    <span className="material-symbols-outlined text-on-surface-variant">chevron_left</span>
+                  </button>
+                  <div className="text-center">
+                    <p className="text-xs font-bold text-on-surface">{mobileWeekLabel}</p>
+                    <p className="text-[10px] text-on-surface-variant">{mobileWeekStart.getFullYear()}</p>
+                  </div>
+                  <button onClick={() => goMobileWeek(1)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container transition-colors">
+                    <span className="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+                  </button>
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                  {mobileWeekDays.map(d => {
+                    const ds = toDateStr(d);
+                    const isToday    = ds === todayStr;
+                    const isSelected = ds === selectedDate;
+                    const hasSessions = (sessionsByDate[ds] ?? []).length > 0;
+                    const holiday = holidayByDate[ds];
+                    return (
+                      <button key={ds} onClick={() => setSelectedDate(ds)}
+                        className={`flex flex-col items-center py-2 rounded-xl transition-all ${
+                          isSelected
+                            ? 'bg-primary text-white shadow-md shadow-primary/25'
+                            : holiday
+                            ? 'bg-orange-100 text-orange-800'
+                            : isToday
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-on-surface hover:bg-surface-container'
+                        }`}>
+                        <span className="text-[9px] font-bold uppercase tracking-wide opacity-70">
+                          {['M','T','W','T','F','S','S'][d.getDay() === 0 ? 6 : d.getDay() - 1]}
+                        </span>
+                        <span className="text-sm font-bold leading-none mt-0.5">{d.getDate()}</span>
+                        {hasSessions && (
+                          <div className={`w-1 h-1 rounded-full mt-1 ${isSelected ? 'bg-white/70' : holiday ? 'bg-orange-500' : 'bg-primary'}`} />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="bg-surface-container-low rounded-2xl p-4">
+                <p className="text-sm font-semibold text-primary mb-3">
+                  {selectedDateObj.toLocaleDateString('en', { weekday: 'long', day: 'numeric', month: 'short' })}
+                </p>
+                {calLoading ? (
+                  <div className="flex justify-center py-6">
+                    <div className="w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : selectedSessions.length === 0 ? (
+                  <div className="text-center text-on-surface-variant py-6">
+                    <span className="material-symbols-outlined text-3xl block mb-1">event_busy</span>
+                    <p className="text-sm">{t('schedule.noSessionsOnDay')}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {selectedSessions.map((s: any) => (
+                      <Link key={s.schedule_id} href={`/schedules/${s.schedule_id}`}
+                        className="block bg-background rounded-xl p-3 hover:shadow-md transition-all group">
+                        <div className="flex items-center justify-between gap-2 mb-0.5">
+                          <p className="font-semibold text-on-surface text-sm group-hover:text-primary transition-colors flex-1 min-w-0">
+                            {s.course_name || s.contract_school_name || 'Session'}
+                          </p>
+                          {s.enrolled_count != null && (
+                            <span className="text-xs text-on-surface-variant shrink-0 flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[13px]">group</span>
+                              {s.enrolled_count}{s.max_capacity ? `/${s.max_capacity}` : ''}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-on-surface-variant flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[12px]">schedule</span>
+                          {fmtTime(s.starts_at)} – {fmtTime(s.ends_at)}
+                        </p>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Desktop: full month grid + sessions panel */}
+            <div className="hidden md:grid grid-cols-1 lg:grid-cols-5 gap-6">
             <div className="lg:col-span-3 bg-surface-container-low rounded-3xl p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
@@ -827,6 +934,7 @@ export default function SchedulePage() {
               )}
             </div>
           </div>
+          </>
         )}
       </div>
 

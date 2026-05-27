@@ -1,4 +1,4 @@
-export interface JwtPayload { sub: number; role: string; exp: number; }
+export interface JwtPayload { sub: number; role: string; exp: number; name?: string; branch_id?: number; }
 
 export function decodeJwt(token: string): JwtPayload | null {
   try {

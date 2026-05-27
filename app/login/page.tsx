@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useT } from '@/context/I18nContext';
 import LanguageToggle from '@/components/LanguageToggle';
 import client from '@/lib/api';
+import { decodeJwt } from '@/lib/auth';
 
 export default function LoginPage() {
   const { signIn } = useAuth();
@@ -23,7 +24,9 @@ export default function LoginPage() {
     try {
       const { data } = await client.post('/auth/login', { email: email.trim(), password });
       signIn(data.access_token, data.refresh_token);
-      router.replace('/today');
+      const payload = decodeJwt(data.access_token);
+      const isOwner = payload?.role === 'owner' || payload?.role === 'super_owner';
+      router.replace(isOwner ? '/dashboard' : '/today');
     } catch (err: any) {
       if (!err.response) setError('Cannot connect to server. Is the backend running?');
       else setError(err.response.data?.error || 'Invalid credentials');

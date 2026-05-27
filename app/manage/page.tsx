@@ -269,6 +269,7 @@ function fmtTime(iso: string) { return new Date(iso).toLocaleTimeString('en', { 
 
 function EnrollTab() {
   const qc = useQueryClient();
+  const { t } = useT();
   const [step, setStep]       = useState<1 | 2 | 3>(1);
   const [search, setSearch]   = useState('');
   const [debSearch, setDebSearch] = useState('');
@@ -382,7 +383,7 @@ function EnrollTab() {
                     <p className="text-sm font-semibold text-on-surface text-center group-hover:text-primary transition-colors leading-tight">{s.name}</p>
                     {typeof s.classes_remaining === 'number' && (
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${low ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'}`}>
-                        {s.classes_remaining} left
+                        {s.classes_remaining} {t('students.classesLeft')}
                       </span>
                     )}
                   </button>

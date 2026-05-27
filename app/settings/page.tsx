@@ -93,18 +93,6 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Sign out */}
-            <button
-              onClick={signOut}
-              className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-error-container text-error font-bold text-base hover:opacity-90 transition-opacity shadow-sm border border-error/10"
-            >
-              <span className="material-symbols-outlined">logout</span>
-              {t('settings.signOut')}
-            </button>
-
-            <p className="text-center text-[10px] text-on-surface-variant uppercase tracking-widest">
-              {t('nav.roboticsPortal')} · {isOwner ? t('settings.ownerEdition') : t('settings.staffEdition')}
-            </p>
           </div>
 
           {/* Right column: Settings panels */}
@@ -238,6 +226,20 @@ export default function SettingsPage() {
             </div>
 
           </div>
+        </div>
+
+        {/* Sign out + version — always at the bottom on all screen sizes */}
+        <div className="mt-6 space-y-3">
+          <button
+            onClick={signOut}
+            className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-error-container text-error font-bold text-base hover:opacity-90 transition-opacity shadow-sm border border-error/10"
+          >
+            <span className="material-symbols-outlined">logout</span>
+            {t('settings.signOut')}
+          </button>
+          <p className="text-center text-[10px] text-on-surface-variant uppercase tracking-widest">
+            {t('nav.roboticsPortal')} · {isOwner ? t('settings.ownerEdition') : t('settings.staffEdition')}
+          </p>
         </div>
       </div>
 

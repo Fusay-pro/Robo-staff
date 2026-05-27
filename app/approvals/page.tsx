@@ -198,10 +198,18 @@ export default function ApprovalsPage() {
                       {initials}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <Link href={`/students/${s.student_id}`}
-                        className="font-bold text-on-surface hover:text-primary transition-colors text-base leading-tight">
-                        {s.name}
-                      </Link>
+                      <div className="flex items-start justify-between gap-2">
+                        <Link href={`/students/${s.student_id}`}
+                          className="font-bold text-on-surface hover:text-primary transition-colors text-base leading-tight">
+                          {s.name}
+                        </Link>
+                        <p className="text-[10px] text-on-surface-variant uppercase tracking-wide shrink-0">
+                          {(() => {
+                            const dt = new Date(s.created_at);
+                            return `${dt.getDate()} ${t(`date.monthsShort.${dt.getMonth() + 1}`)} ${dt.getFullYear()}`;
+                          })()}
+                        </p>
+                      </div>
                       <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                         {s.age && (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant">
@@ -210,7 +218,7 @@ export default function ApprovalsPage() {
                         )}
                         {!isPending && (
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isApproved ? 'bg-emerald-100 text-emerald-800' : 'bg-error/10 text-error'}`}>
-                            {s.approval_status}
+                            {isApproved ? t('students.status.approved') : t('students.status.rejected')}
                           </span>
                         )}
                         {s.branch_name && (
@@ -218,12 +226,6 @@ export default function ApprovalsPage() {
                         )}
                       </div>
                     </div>
-                    <p className="text-[10px] text-on-surface-variant uppercase tracking-wide shrink-0">
-                      {(() => {
-                        const dt = new Date(s.created_at);
-                        return `${dt.getDate()} ${t(`date.monthsShort.${dt.getMonth() + 1}`)} ${dt.getFullYear()}`;
-                      })()}
-                    </p>
                   </div>
 
                   {/* Info grid */}

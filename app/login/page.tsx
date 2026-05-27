@@ -23,9 +23,14 @@ export default function LoginPage() {
     setError(''); setLoading(true);
     try {
       const { data } = await client.post('/auth/login', { email: email.trim(), password });
-      signIn(data.access_token, data.refresh_token);
       const payload = decodeJwt(data.access_token);
-      const isOwner = payload?.role === 'owner' || payload?.role === 'super_owner';
+      const staffRoles = ['owner', 'super_owner', 'staff'];
+      if (!payload || !staffRoles.includes(payload.role)) {
+        setError(t('login.wrongPortal'));
+        return;
+      }
+      signIn(data.access_token, data.refresh_token);
+      const isOwner = payload.role === 'owner' || payload.role === 'super_owner';
       router.replace(isOwner ? '/dashboard' : '/today');
     } catch (err: any) {
       if (!err.response) setError('Cannot connect to server. Is the backend running?');

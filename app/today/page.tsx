@@ -4,6 +4,7 @@ import AppShell from '@/components/AppShell';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import client from '@/lib/api';
 import { useT } from '@/context/I18nContext';
 
@@ -168,6 +169,7 @@ function AttendancePopup({
 
 function SessionCard({ s }: { s: any }) {
   const { t } = useT();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [activeStudent, setActiveStudent] = useState<any>(null);
   const qc = useQueryClient();
@@ -209,11 +211,20 @@ function SessionCard({ s }: { s: any }) {
   return (
     <>
       <div className={`bg-surface-container-lowest rounded-xl overflow-hidden shadow-md border border-outline-variant/30 border-l-4 ${col.border} transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg`}>
-        {/* Card header */}
-        <button onClick={() => setOpen(v => !v)} className="w-full p-5 flex items-center gap-4 text-left">
+        {/* Card header — mobile: tap → redirect; desktop: tap → expand */}
+        <button
+          onClick={() => {
+            if (window.innerWidth < 768) {
+              router.push(`/schedules/${s.schedule_id}`);
+            } else {
+              setOpen(v => !v);
+            }
+          }}
+          className="w-full p-3.5 md:p-5 flex items-center gap-3 md:gap-4 text-left"
+        >
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-bold text-[17px] text-on-surface leading-tight">{name}</h3>
+              <h3 className="font-bold text-[15px] md:text-[17px] text-on-surface leading-tight">{name}</h3>
               {typeLabel && (
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${col.bg} ${col.icon}`}>
                   {typeLabel}
@@ -221,11 +232,11 @@ function SessionCard({ s }: { s: any }) {
               )}
             </div>
             <div className="flex items-center gap-3 mt-1 flex-wrap">
-              <span className="flex items-center gap-1 text-on-surface-variant text-[13px]">
+              <span className="flex items-center gap-1 text-on-surface-variant text-[12px] md:text-[13px]">
                 <span className="material-symbols-outlined text-[13px]">schedule</span>
                 {fmtTime(s.starts_at)} – {fmtTime(s.ends_at)}
               </span>
-              <span className="flex items-center gap-1 text-on-surface-variant text-[13px]">
+              <span className="flex items-center gap-1 text-on-surface-variant text-[12px] md:text-[13px]">
                 <span className="material-symbols-outlined text-[13px]">group</span>
                 {enrolled} {enrolled !== 1 ? t('today.studentsCount') : t('today.studentCount')}
               </span>
@@ -241,8 +252,10 @@ function SessionCard({ s }: { s: any }) {
                 </div>
               </div>
             )}
+            {/* Mobile: chevron_right (navigate); Desktop: expand_more (expand) */}
             <div className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${open ? 'bg-primary/10' : 'bg-surface-container'}`}>
-              <span className={`material-symbols-outlined text-[18px] transition-transform duration-300 ${open ? 'rotate-180 text-primary' : 'text-on-surface-variant'}`}>
+              <span className="material-symbols-outlined text-[18px] md:hidden text-on-surface-variant">chevron_right</span>
+              <span className={`material-symbols-outlined text-[18px] hidden md:block transition-transform duration-300 ${open ? 'rotate-180 text-primary' : 'text-on-surface-variant'}`}>
                 expand_more
               </span>
             </div>
@@ -374,12 +387,12 @@ function SessionCard({ s }: { s: any }) {
 
 function StatCard({ icon, label, value, color }: { icon: string; label: string; value: string | number; color: string }) {
   return (
-    <div className="flex-1 bg-surface-container-lowest rounded-xl px-5 py-4 flex items-center gap-3 shadow-md border border-outline-variant/30">
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
+    <div className="flex-1 bg-surface-container-lowest rounded-xl px-3 py-3 md:px-5 md:py-4 flex items-center gap-3 shadow-md border border-outline-variant/30">
+      <div className={`w-10 h-10 rounded-xl items-center justify-center shrink-0 hidden md:flex ${color}`}>
         <span className="material-symbols-outlined text-white text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>{icon}</span>
       </div>
       <div>
-        <p className="text-2xl font-bold text-on-surface leading-none">{value}</p>
+        <p className="text-xl md:text-2xl font-bold text-on-surface leading-none">{value}</p>
         <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider mt-0.5">{label}</p>
       </div>
     </div>

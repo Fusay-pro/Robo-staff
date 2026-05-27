@@ -7,7 +7,7 @@ import { useT } from '@/context/I18nContext';
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { role, signOut } = useAuth();
+  const { role, name, signOut } = useAuth();
   const { t } = useT();
   const isOwner = role === 'owner' || role === 'super_owner';
 
@@ -69,8 +69,8 @@ export default function Sidebar() {
             <span className="material-symbols-outlined text-primary text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>account_circle</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-on-surface truncate">{isOwner ? t('nav.owner') : t('nav.staff')}</p>
-            <p className="text-[10px] text-on-surface-variant truncate">{t('nav.roboticsPortal')}</p>
+            <p className="text-xs font-bold text-on-surface truncate">{name || (isOwner ? t('nav.owner') : t('nav.staff'))}</p>
+            <p className="text-[10px] text-on-surface-variant truncate">{isOwner ? t('nav.owner') : t('nav.staff')}</p>
           </div>
           <button
             onClick={signOut}

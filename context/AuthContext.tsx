@@ -8,6 +8,7 @@ interface AuthContextValue {
   token: string | null;
   role: string | null;
   userId: number | null;
+  name: string | null;
   loading: boolean;
   signIn: (access: string, refresh: string) => void;
   signOut: () => void;
@@ -19,6 +20,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [userId, setUserId] = useState<number | null>(null);
+  const [name, setName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!access) { setLoading(false); return; }
     if (!isExpired(access)) {
       const payload = decodeJwt(access);
-      setToken(access); setRole(payload?.role ?? null); setUserId(payload?.sub ?? null);
+      setToken(access); setRole(payload?.role ?? null); setUserId(payload?.sub ?? null); setName(payload?.name ?? null);
       setLoading(false); return;
     }
     if (refresh) {
@@ -35,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .then(({ data }) => {
           setTokens(data.access_token, data.refresh_token);
           const payload = decodeJwt(data.access_token);
-          setToken(data.access_token); setRole(payload?.role ?? null); setUserId(payload?.sub ?? null);
+          setToken(data.access_token); setRole(payload?.role ?? null); setUserId(payload?.sub ?? null); setName(payload?.name ?? null);
         })
         .catch(() => clearTokens())
         .finally(() => setLoading(false));
@@ -45,13 +47,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = (access: string, refresh: string) => {
     setTokens(access, refresh);
     const payload = decodeJwt(access);
-    setToken(access); setRole(payload?.role ?? null); setUserId(payload?.sub ?? null);
+    setToken(access); setRole(payload?.role ?? null); setUserId(payload?.sub ?? null); setName(payload?.name ?? null);
   };
 
-  const signOut = () => { clearTokens(); setToken(null); setRole(null); setUserId(null); };
+  const signOut = () => { clearTokens(); setToken(null); setRole(null); setUserId(null); setName(null); };
 
   return (
-    <AuthContext.Provider value={{ token, role, userId, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ token, role, userId, name, loading, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

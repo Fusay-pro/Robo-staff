@@ -195,11 +195,7 @@ export default function SettingsPage() {
                   </div>
                   <div className="flex-1">
                     <p className="font-semibold text-on-surface">{t('settings.theme')}</p>
-                    <p className="text-xs text-on-surface-variant">{t('settings.themeHint')}</p>
-                  </div>
-                  <div className="flex gap-1 bg-surface-container rounded-xl p-1 shrink-0">
-                    <button className="px-3 py-1.5 rounded-lg bg-white text-xs font-bold text-on-surface shadow-sm">{t('settings.themeLight')}</button>
-                    <button className="px-3 py-1.5 rounded-lg text-xs font-semibold text-on-surface-variant hover:text-on-surface transition-colors">{t('settings.themeDark')}</button>
+                    <p className="text-xs text-on-surface-variant">{t('settings.themeFollowsSystem')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 px-6 py-5">

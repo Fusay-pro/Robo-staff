@@ -1555,12 +1555,12 @@ export default function ManagePage() {
         </div>
 
         {/* Tab bar */}
-        <div className="flex gap-1 mb-6 bg-surface-container rounded-2xl p-1">
+        <div className="flex gap-1 mb-6 bg-surface-container rounded-2xl p-1 overflow-x-auto">
           {TABS.map(tab2 => (
             <button key={tab2.key} onClick={() => setTab(tab2.key)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all ${tab === tab2.key ? 'bg-background text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}>
+              className={`flex-shrink-0 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold rounded-xl transition-all ${tab === tab2.key ? 'bg-background text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}>
               <span className="material-symbols-outlined text-[16px]">{tab2.icon}</span>
-              <span className="hidden sm:inline">{tab2.label}</span>
+              <span>{tab2.label}</span>
             </button>
           ))}
         </div>

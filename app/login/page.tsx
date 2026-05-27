@@ -26,7 +26,7 @@ export default function LoginPage() {
       const payload = decodeJwt(data.access_token);
       const staffRoles = ['owner', 'super_owner', 'staff'];
       if (!payload || !staffRoles.includes(payload.role)) {
-        setError(t('login.wrongPortal'));
+        setError(t('login.invalidCreds'));
         return;
       }
       signIn(data.access_token, data.refresh_token);

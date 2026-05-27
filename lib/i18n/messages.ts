@@ -29,7 +29,8 @@ export const messages = {
     'login.password':   'Password',
     'login.signIn':      'Sign In',
     'login.signingIn':   'Signing in…',
-    'login.wrongPortal': 'This account is not a staff account. Please use the parent portal.',
+    'login.wrongPortal':  'This account is not a staff account. Please use the parent portal.',
+    'login.invalidCreds': 'Invalid email or password',
 
     // Common / shared
     'common.cancel':         'Cancel',
@@ -734,7 +735,8 @@ export const messages = {
     'login.password':   'รหัสผ่าน',
     'login.signIn':      'เข้าสู่ระบบ',
     'login.signingIn':   'กำลังเข้าสู่ระบบ…',
-    'login.wrongPortal': 'บัญชีนี้ไม่ใช่บัญชีครู กรุณาใช้พอร์ทัลผู้ปกครอง',
+    'login.wrongPortal':  'บัญชีนี้ไม่ใช่บัญชีครู กรุณาใช้พอร์ทัลผู้ปกครอง',
+    'login.invalidCreds': 'อีเมลหรือรหัสผ่านไม่ถูกต้อง',
 
     // Common / shared
     'common.cancel':         'ยกเลิก',

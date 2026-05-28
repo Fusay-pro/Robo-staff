@@ -1,5 +1,4 @@
-﻿'use client';
-/* eslint-disable @typescript-eslint/no-explicit-any */
+'use client';
 
 import AppShell from '@/components/AppShell';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -252,7 +251,7 @@ export default function StudentDetailPage() {
 
         {/* Bento grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {/* Student info â€” left */}
+          {/* Student info — left */}
           <div className="lg:col-span-7 bg-surface-container-lowest rounded-3xl p-8">
             <h2 className="flex items-center gap-2 text-lg font-bold text-primary mb-6">
               <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>badge</span>
@@ -260,10 +259,10 @@ export default function StudentDetailPage() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-6">
               {[
-                { label: t('students.dob'), value: student.date_of_birth ? (() => { const dt = new Date(student.date_of_birth); return `${dt.getDate()} ${t(`date.months.${dt.getMonth() + 1}`)} ${dt.getFullYear()}`; })() : student.age ? `${t('approvals.ageLabel')} ${student.age}` : 'â€”' },
-                { label: t('students.school'), value: student.school_name || 'â€”' },
-                { label: t('students.parentName'), value: student.parent_name || 'â€”' },
-                { label: t('students.parentPhone'), value: student.parent_phone || 'â€”' },
+                { label: t('students.dob'), value: student.date_of_birth ? (() => { const dt = new Date(student.date_of_birth); return `${dt.getDate()} ${t(`date.months.${dt.getMonth() + 1}`)} ${dt.getFullYear()}`; })() : student.age ? `${t('approvals.ageLabel')} ${student.age}` : '—' },
+                { label: t('students.school'), value: student.school_name || '—' },
+                { label: t('students.parentName'), value: student.parent_name || '—' },
+                { label: t('students.parentPhone'), value: student.parent_phone || '—' },
               ].map(({ label, value }) => (
                 <div key={label}>
                   <p className="text-[10px] font-bold tracking-widest uppercase text-on-surface-variant mb-1">{label}</p>
@@ -299,7 +298,7 @@ export default function StudentDetailPage() {
 
           {/* Right column: packages + notes */}
           <div className="lg:col-span-5 flex flex-col gap-4">
-            {/* Packages â€” all (active + inactive) with toggle */}
+            {/* Packages — all (active + inactive) with toggle */}
             <div className="bg-surface-container-lowest rounded-3xl p-6">
               <div className="flex items-center justify-between mb-5">
                 <h2 className="flex items-center gap-2 text-lg font-bold text-primary">
@@ -344,7 +343,7 @@ export default function StudentDetailPage() {
                           <div className="min-w-0">
                             <p className="font-bold text-on-surface text-sm truncate">{p.package_name}</p>
                             <p className="text-[11px] text-on-surface-variant truncate">
-                              {p.course_name}{p.robot_type_name ? ` Â· ${p.robot_type_name}` : ''}
+                              {p.course_name}{p.robot_type_name ? ` · ${p.robot_type_name}` : ''}
                             </p>
                           </div>
                           {isOwner ? (
@@ -435,7 +434,7 @@ export default function StudentDetailPage() {
                   </div>
                   <p className="flex items-center gap-1.5 text-xs text-on-surface-variant">
                     <span className="material-symbols-outlined text-[14px]">update</span>
-                    {latestNote.author_name} Â· {(() => { const dt = new Date(latestNote.created_at); return `${dt.getDate()} ${t(`date.monthsShort.${dt.getMonth() + 1}`)}`; })()}
+                    {latestNote.author_name} · {(() => { const dt = new Date(latestNote.created_at); return `${dt.getDate()} ${t(`date.monthsShort.${dt.getMonth() + 1}`)}`; })()}
                   </p>
                   {notes.length > 1 && (
                     <p className="text-xs text-primary mt-2 font-semibold">+{notes.length - 1} {notes.length > 2 ? t('students.moreNotesPlural') : t('students.moreNotes')}</p>
@@ -488,11 +487,11 @@ export default function StudentDetailPage() {
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-on-surface text-sm">{p.name}</p>
                       <p className="text-[11px] text-on-surface-variant truncate">
-                        {p.course_name || t('manage.tabs.courses')} Â· {p.class_count} {t('students.classesText')}
+                        {p.course_name || t('manage.tabs.courses')} · {p.class_count} {t('students.classesText')}
                       </p>
                     </div>
                     {p.price != null && (
-                      <span className="text-xs font-bold text-primary shrink-0">à¸¿{p.price?.toLocaleString?.()}</span>
+                      <span className="text-xs font-bold text-primary shrink-0">฿{p.price?.toLocaleString?.()}</span>
                     )}
                   </button>
                 );
@@ -636,4 +635,3 @@ export default function StudentDetailPage() {
     </AppShell>
   );
 }
-

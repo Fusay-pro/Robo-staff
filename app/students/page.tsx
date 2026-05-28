@@ -1,5 +1,4 @@
-﻿'use client';
-/* eslint-disable @typescript-eslint/no-explicit-any */
+'use client';
 
 import AppShell from '@/components/AppShell';
 import { useQuery } from '@tanstack/react-query';
@@ -100,7 +99,7 @@ export default function StudentsPage() {
               <span className="material-symbols-outlined text-primary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>group</span>
             </div>
             <div>
-              <p className="text-xl md:text-2xl font-extrabold text-on-surface">{statsData?.total ?? 'â€”'}</p>
+              <p className="text-xl md:text-2xl font-extrabold text-on-surface">{statsData?.total ?? '—'}</p>
               <p className="text-xs text-on-surface-variant font-medium">{t('students.totalStudents')}</p>
             </div>
           </div>
@@ -109,7 +108,7 @@ export default function StudentsPage() {
               <span className="material-symbols-outlined text-emerald-700 text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>card_membership</span>
             </div>
             <div>
-              <p className="text-xl md:text-2xl font-extrabold text-on-surface">{statsData?.with_active_package ?? 'â€”'}</p>
+              <p className="text-xl md:text-2xl font-extrabold text-on-surface">{statsData?.with_active_package ?? '—'}</p>
               <p className="text-xs text-on-surface-variant font-medium">{t('students.activePackagesStat')}</p>
             </div>
           </div>
@@ -118,7 +117,7 @@ export default function StudentsPage() {
               <span className="material-symbols-outlined text-orange-600 text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
             </div>
             <div>
-              <p className="text-xl md:text-2xl font-extrabold text-on-surface">{statsData?.low_classes ?? 'â€”'}</p>
+              <p className="text-xl md:text-2xl font-extrabold text-on-surface">{statsData?.low_classes ?? '—'}</p>
               <p className="text-xs text-on-surface-variant font-medium">{t('students.lowOnClasses')}</p>
             </div>
           </div>
@@ -242,5 +241,3 @@ export default function StudentsPage() {
     </AppShell>
   );
 }
-
-

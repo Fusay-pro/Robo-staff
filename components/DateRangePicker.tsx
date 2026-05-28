@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useRef, useEffect } from 'react';
 
@@ -59,7 +59,7 @@ export default function DateRangePicker({ from, to, onChange, placeholder = 'Sel
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   const displayLabel = from && to
-    ? `${new Date(from + 'T00:00').toLocaleDateString('en', { day: 'numeric', month: 'short' })} â€“ ${new Date(to + 'T00:00').toLocaleDateString('en', { day: 'numeric', month: 'short' })}`
+    ? `${new Date(from + 'T00:00').toLocaleDateString('en', { day: 'numeric', month: 'short' })} – ${new Date(to + 'T00:00').toLocaleDateString('en', { day: 'numeric', month: 'short' })}`
     : from
     ? `From ${new Date(from + 'T00:00').toLocaleDateString('en', { day: 'numeric', month: 'short' })}`
     : placeholder;
@@ -70,7 +70,7 @@ export default function DateRangePicker({ from, to, onChange, placeholder = 'Sel
       setSelecting('to');
     } else {
       if (fromDate && day < fromDate) {
-        // clicked before from â†’ swap
+        // clicked before from → swap
         onChange(toISO(day), from);
       } else {
         onChange(from, toISO(day));
@@ -208,4 +208,3 @@ export default function DateRangePicker({ from, to, onChange, placeholder = 'Sel
     </div>
   );
 }
-

@@ -1,5 +1,4 @@
-﻿'use client';
-/* eslint-disable @typescript-eslint/no-explicit-any */
+'use client';
 import AppShell from '@/components/AppShell';
 import { useState, useEffect, useRef } from 'react';
 import { useT } from '@/context/I18nContext';
@@ -12,9 +11,9 @@ function resolveImg(u: string) {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import client from '@/lib/api';
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ────────────────────────────────────────────────────────────────────────────
 // Types
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ────────────────────────────────────────────────────────────────────────────
 type Course    = { course_id: number; name: string; description?: string; level_id?: number; robot_type_id?: number; level_name?: string; robot_type_name?: string };
 type Pkg       = { package_id: number; course_id: number; name: string; class_count: number; price: number; course_name?: string };
 type RobotType = { robot_type_id: number; name: string };
@@ -24,9 +23,9 @@ type CusPkg    = { customer_package_id: number; package_id: number; package_name
 type Schedule  = { schedule_id: number; starts_at: string; ends_at: string; course_name?: string; enrolled_count: number; max_capacity: number };
 type Announcement = { announcement_id: number; title: string; body?: string; image_url?: string; send_to: string; created_at: string; created_by_name?: string };
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ────────────────────────────────────────────────────────────────────────────
 // Courses & Packages Tab
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ────────────────────────────────────────────────────────────────────────────
 function CoursesTab() {
   const qc = useQueryClient();
   const [expanded, setExpanded] = useState<number | null>(null);
@@ -123,7 +122,7 @@ function CoursesTab() {
                 {isOpen && (
                   <div className="border-t border-outline-variant/10 px-4 py-3 bg-surface-container/20 space-y-2">
                     {pkgs.length === 0 && (
-                      <p className="text-xs text-on-surface-variant text-center py-2">No packages â€” add one below</p>
+                      <p className="text-xs text-on-surface-variant text-center py-2">No packages — add one below</p>
                     )}
                     {pkgs.map(p => (
                       <div key={p.package_id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-surface-container-lowest shadow-sm border border-outline-variant/30">
@@ -132,7 +131,7 @@ function CoursesTab() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-on-surface">{p.name}</p>
-                          <p className="text-xs text-on-surface-variant">{p.class_count} classes Â· à¸¿{Number(p.price).toLocaleString()}</p>
+                          <p className="text-xs text-on-surface-variant">{p.class_count} classes · ฿{Number(p.price).toLocaleString()}</p>
                         </div>
                         <div className="flex items-center gap-1">
                           <button onClick={() => openPkg(c.course_id, p)}
@@ -218,7 +217,7 @@ function CoursesTab() {
                       className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">Price (à¸¿) *</label>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">Price (฿) *</label>
                     <input type="number" min="0" value={form.price || ''} onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
                       className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
@@ -231,7 +230,7 @@ function CoursesTab() {
               <button onClick={() => setModal(null)} className="flex-1 py-2.5 rounded-xl border border-outline-variant text-sm font-semibold text-on-surface-variant hover:bg-surface-container transition-colors">Cancel</button>
               <button onClick={save} disabled={saving}
                 className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity">
-                {saving ? 'Savingâ€¦' : 'Save'}
+                {saving ? 'Saving…' : 'Save'}
               </button>
             </div>
           </div>
@@ -262,9 +261,9 @@ function CoursesTab() {
   );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ────────────────────────────────────────────────────────────────────────────
 // Enroll Student Tab
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ────────────────────────────────────────────────────────────────────────────
 function fmtDate(iso: string) { return new Date(iso).toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric' }); }
 function fmtTime(iso: string) { return new Date(iso).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }); }
 
@@ -333,7 +332,7 @@ function EnrollTab() {
       <h3 className="font-bold text-on-surface text-lg mb-1">Enrolled!</h3>
       <p className="text-sm text-on-surface-variant mb-1">{selStudent?.name}</p>
       <p className="text-xs text-on-surface-variant mb-2">{selPkg?.course_name}</p>
-      {selSession && <p className="text-xs text-on-surface-variant mb-6">{fmtDate(selSession.starts_at)} Â· {fmtTime(selSession.starts_at)}â€“{fmtTime(selSession.ends_at)}</p>}
+      {selSession && <p className="text-xs text-on-surface-variant mb-6">{fmtDate(selSession.starts_at)} · {fmtTime(selSession.starts_at)}–{fmtTime(selSession.ends_at)}</p>}
       <button onClick={reset} className="px-6 py-2.5 bg-primary text-white text-sm font-bold rounded-xl hover:opacity-90 transition-opacity">Enroll Another</button>
     </div>
   );
@@ -355,18 +354,18 @@ function EnrollTab() {
         ))}
       </div>
 
-      {/* â”€â”€ Step 1: Pick student â”€â”€ */}
+      {/* ── Step 1: Pick student ── */}
       {step === 1 && (
         <>
           <div className="flex items-center gap-3 mb-4 bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5">
             <span className="material-symbols-outlined text-on-surface-variant text-[18px]">search</span>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search studentsâ€¦"
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search students…"
               className="flex-1 bg-transparent text-sm focus:outline-none" />
             {search && <button onClick={() => setSearch('')}><span className="material-symbols-outlined text-[16px] text-on-surface-variant">close</span></button>}
           </div>
 
           {loadStudents ? (
-            <p className="py-12 text-center text-sm text-on-surface-variant">Loadingâ€¦</p>
+            <p className="py-12 text-center text-sm text-on-surface-variant">Loading…</p>
           ) : students.length === 0 ? (
             <div className="py-12 text-center text-on-surface-variant">
               <span className="material-symbols-outlined text-3xl block mb-2">person_search</span>
@@ -395,7 +394,7 @@ function EnrollTab() {
         </>
       )}
 
-      {/* â”€â”€ Step 2: Pick package â”€â”€ */}
+      {/* ── Step 2: Pick package ── */}
       {step === 2 && selStudent && (
         <>
           <div className="flex items-center gap-3 mb-5">
@@ -409,13 +408,13 @@ function EnrollTab() {
           </div>
 
           {loadPkgs ? (
-            <p className="py-12 text-center text-sm text-on-surface-variant">Loadingâ€¦</p>
+            <p className="py-12 text-center text-sm text-on-surface-variant">Loading…</p>
           ) : (
             <>
               {cusPkgs.length === 0 && (
                 <div className="py-8 text-center text-on-surface-variant mb-4">
                   <span className="material-symbols-outlined text-3xl block mb-2">package_2</span>
-                  <p className="text-sm">No active packages â€” assign one below</p>
+                  <p className="text-sm">No active packages — assign one below</p>
                 </div>
               )}
 
@@ -461,7 +460,7 @@ function EnrollTab() {
         </>
       )}
 
-      {/* â”€â”€ Step 3: Pick session â”€â”€ */}
+      {/* ── Step 3: Pick session ── */}
       {step === 3 && selPkg && (
         <>
           <div className="flex items-center gap-3 mb-5">
@@ -475,7 +474,7 @@ function EnrollTab() {
           </div>
 
           {loadSessions ? (
-            <p className="py-12 text-center text-sm text-on-surface-variant">Loadingâ€¦</p>
+            <p className="py-12 text-center text-sm text-on-surface-variant">Loading…</p>
           ) : sessions.length === 0 ? (
             <div className="py-12 text-center text-on-surface-variant">
               <span className="material-symbols-outlined text-3xl block mb-2">event_busy</span>
@@ -513,13 +512,13 @@ function EnrollTab() {
             <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl flex items-center justify-between">
               <div>
                 <p className="text-sm font-bold text-on-surface">{selStudent?.name}</p>
-                <p className="text-xs text-on-surface-variant">{fmtDate(selSession.starts_at)} Â· {fmtTime(selSession.starts_at)}â€“{fmtTime(selSession.ends_at)}</p>
+                <p className="text-xs text-on-surface-variant">{fmtDate(selSession.starts_at)} · {fmtTime(selSession.starts_at)}–{fmtTime(selSession.ends_at)}</p>
               </div>
               <button
                 onClick={() => enrollMut.mutate({ student_id: selStudent!.student_id, schedule_id: selSession.schedule_id, customer_package_id: selPkg.customer_package_id })}
                 disabled={enrollMut.isPending}
                 className="px-5 py-2 bg-primary text-white text-sm font-bold rounded-xl hover:opacity-90 disabled:opacity-50 transition-opacity">
-                {enrollMut.isPending ? 'Enrollingâ€¦' : 'Confirm Enroll'}
+                {enrollMut.isPending ? 'Enrolling…' : 'Confirm Enroll'}
               </button>
             </div>
           )}
@@ -541,10 +540,10 @@ function EnrollTab() {
             <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">Select Package</label>
             <select value={buyPkgId} onChange={e => setBuyPkgId(e.target.value)}
               className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-              <option value="">Chooseâ€¦</option>
+              <option value="">Choose…</option>
               {catalog.map(p => (
                 <option key={p.package_id} value={p.package_id}>
-                  {p.course_name} â€” {p.name} ({p.class_count} classes Â· à¸¿{Number(p.price).toLocaleString()})
+                  {p.course_name} — {p.name} ({p.class_count} classes · ฿{Number(p.price).toLocaleString()})
                 </option>
               ))}
             </select>
@@ -554,7 +553,7 @@ function EnrollTab() {
                 onClick={() => buyPkgId && buyMut.mutate({ student_id: selStudent!.student_id, package_id: +buyPkgId })}
                 disabled={!buyPkgId || buyMut.isPending}
                 className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity">
-                {buyMut.isPending ? 'Assigningâ€¦' : 'Assign'}
+                {buyMut.isPending ? 'Assigning…' : 'Assign'}
               </button>
             </div>
           </div>
@@ -564,9 +563,9 @@ function EnrollTab() {
   );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ────────────────────────────────────────────────────────────────────────────
 // Announcements Tab
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ────────────────────────────────────────────────────────────────────────────
 function AnnouncementsTab() {
   const qc = useQueryClient();
   const [form, setForm] = useState({ title: '', body: '', image_url: '' });
@@ -687,7 +686,7 @@ function AnnouncementsTab() {
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">Message</label>
               <textarea rows={3} value={form.body} onChange={e => setForm(f => ({ ...f, body: e.target.value }))}
-                placeholder="Additional detailsâ€¦"
+                placeholder="Additional details…"
                 className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
             </div>
             <div>
@@ -716,7 +715,7 @@ function AnnouncementsTab() {
                   {uploading ? (
                     <>
                       <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                      <span className="text-xs text-on-surface-variant font-semibold">Uploadingâ€¦</span>
+                      <span className="text-xs text-on-surface-variant font-semibold">Uploading…</span>
                     </>
                   ) : (
                     <>
@@ -732,7 +731,7 @@ function AnnouncementsTab() {
                 <summary className="text-[11px] text-on-surface-variant cursor-pointer hover:text-on-surface">Or paste a URL</summary>
                 <input value={form.image_url.startsWith('http') ? form.image_url : ''}
                   onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))}
-                  placeholder="https://â€¦"
+                  placeholder="https://…"
                   className="w-full mt-2 bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30" />
               </details>
             </div>
@@ -741,7 +740,7 @@ function AnnouncementsTab() {
             <button onClick={send} disabled={!form.title.trim() || sendMut.isPending}
               className="w-full py-3 bg-primary text-white font-bold rounded-xl hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center justify-center gap-2">
               <span className="material-symbols-outlined text-[18px]">send</span>
-              {sendMut.isPending ? 'Sendingâ€¦' : 'Send to All'}
+              {sendMut.isPending ? 'Sending…' : 'Send to All'}
             </button>
           </div>
         </div>
@@ -859,7 +858,7 @@ function AnnouncementsTab() {
               </button>
               <button onClick={() => delMut.mutate(delTarget.announcement_id)} disabled={delMut.isPending}
                 className="flex-1 py-2.5 rounded-xl bg-error text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity">
-                {delMut.isPending ? 'Deletingâ€¦' : 'Delete'}
+                {delMut.isPending ? 'Deleting…' : 'Delete'}
               </button>
             </div>
           </div>
@@ -869,9 +868,9 @@ function AnnouncementsTab() {
   );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Staff Tab â€” owner creates/manages teacher accounts for this branch
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ────────────────────────────────────────────────────────────────────────────
+// Staff Tab — owner creates/manages teacher accounts for this branch
+// ────────────────────────────────────────────────────────────────────────────
 type StaffUser = { user_id: number; name: string; email: string; phone?: string; role: string; monthly_salary?: number; active_from?: string; active_until?: string; created_at: string };
 
 function StaffTab() {
@@ -1068,7 +1067,7 @@ function StaffTab() {
                       placeholder="Min 8 characters"
                       minLength={8}
                       className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                    <p className="text-[11px] text-on-surface-variant mt-1.5">Share this with them â€” they can change it later via Settings.</p>
+                    <p className="text-[11px] text-on-surface-variant mt-1.5">Share this with them — they can change it later via Settings.</p>
                   </div>
                 </>
               )}
@@ -1083,7 +1082,7 @@ function StaffTab() {
               </button>
               <button onClick={save} disabled={createMut.isPending || updateMut.isPending}
                 className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity">
-                {createMut.isPending || updateMut.isPending ? 'Savingâ€¦' : modal.editing ? 'Save Changes' : 'Create Staff'}
+                {createMut.isPending || updateMut.isPending ? 'Saving…' : modal.editing ? 'Save Changes' : 'Create Staff'}
               </button>
             </div>
           </div>
@@ -1109,7 +1108,7 @@ function StaffTab() {
               </button>
               <button onClick={() => deleteMut.mutate(delTarget.user_id)} disabled={deleteMut.isPending}
                 className="flex-1 py-2.5 rounded-xl bg-error text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity">
-                {deleteMut.isPending ? 'Removingâ€¦' : 'Remove'}
+                {deleteMut.isPending ? 'Removing…' : 'Remove'}
               </button>
             </div>
           </div>
@@ -1140,7 +1139,7 @@ function StaffCard({ user, onEdit, onDelete }: { user: StaffUser; onEdit: (u: St
       </div>
       <div className="text-[11px] text-on-surface-variant grid grid-cols-2 gap-1">
         {user.phone && <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">call</span>{user.phone}</span>}
-        {user.monthly_salary != null && <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">payments</span>à¸¿{user.monthly_salary.toLocaleString?.()}</span>}
+        {user.monthly_salary != null && <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">payments</span>฿{user.monthly_salary.toLocaleString?.()}</span>}
       </div>
       <div className="flex gap-2 mt-1">
         <button onClick={() => onEdit(user)}
@@ -1156,9 +1155,9 @@ function StaffCard({ user, onEdit, onDelete }: { user: StaffUser; onEdit: (u: St
   );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Settings Tab â€” Robot Types & Course Levels
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ────────────────────────────────────────────────────────────────────────────
+// Settings Tab — Robot Types & Course Levels
+// ────────────────────────────────────────────────────────────────────────────
 function SettingsTab() {
   const qc = useQueryClient();
   const { data: robotTypes = [] } = useQuery<RobotType[]>({ queryKey: ['robot-types'],   queryFn: () => client.get('/robot-types').then(r => r.data) });
@@ -1266,12 +1265,12 @@ function SettingsTab() {
 
   return (
     <>
-      {/* Branch info â€” full width */}
+      {/* Branch info — full width */}
       <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-sm overflow-hidden mb-6">
         <div className="px-5 py-4 border-b border-outline-variant/20 flex items-center justify-between bg-primary/5">
           <div>
             <h3 className="font-bold text-on-surface">Branch Info</h3>
-            <p className="text-[11px] text-on-surface-variant mt-0.5">What parents see on their app â€” name, address, phone</p>
+            <p className="text-[11px] text-on-surface-variant mt-0.5">What parents see on their app — name, address, phone</p>
           </div>
           <span className="material-symbols-outlined text-primary text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>storefront</span>
         </div>
@@ -1301,7 +1300,7 @@ function SettingsTab() {
             <button onClick={saveBranch} disabled={branchMut.isPending}
               className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-bold rounded-xl hover:opacity-90 disabled:opacity-50 transition-opacity">
               <span className="material-symbols-outlined text-[16px]">save</span>
-              {branchMut.isPending ? 'Savingâ€¦' : 'Save Changes'}
+              {branchMut.isPending ? 'Saving…' : 'Save Changes'}
             </button>
             {branchSaved && (
               <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
@@ -1358,7 +1357,7 @@ function SettingsTab() {
           <div className="px-5 py-4 border-b border-outline-variant/20 flex items-center justify-between bg-primary/5">
             <div>
               <h3 className="font-bold text-on-surface">Course Levels</h3>
-              <p className="text-[11px] text-on-surface-variant mt-0.5">Tag courses by skill level (Beginner, Intermediate, â€¦)</p>
+              <p className="text-[11px] text-on-surface-variant mt-0.5">Tag courses by skill level (Beginner, Intermediate, …)</p>
             </div>
             <button onClick={() => openLv()}
               className="flex items-center gap-1 px-3 py-1.5 bg-primary text-white text-xs font-bold rounded-lg hover:opacity-90">
@@ -1408,7 +1407,7 @@ function SettingsTab() {
               {thresholdMut.isPending && (
                 <span className="text-xs text-on-surface-variant flex items-center gap-1">
                   <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  Savingâ€¦
+                  Saving…
                 </span>
               )}
               {thresholdSaved && !thresholdMut.isPending && (
@@ -1459,7 +1458,7 @@ function SettingsTab() {
                 onClick={() => rtMut.mutate({ ...rtForm, robot_type_id: rtModal.editing?.robot_type_id })}
                 disabled={!rtForm.name.trim() || rtMut.isPending}
                 className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity">
-                {rtMut.isPending ? 'Savingâ€¦' : 'Save'}
+                {rtMut.isPending ? 'Saving…' : 'Save'}
               </button>
             </div>
           </div>
@@ -1492,7 +1491,7 @@ function SettingsTab() {
                 onClick={() => lvMut.mutate({ ...lvForm, level_id: lvModal.editing?.level_id })}
                 disabled={!lvForm.name.trim() || lvMut.isPending}
                 className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity">
-                {lvMut.isPending ? 'Savingâ€¦' : 'Save'}
+                {lvMut.isPending ? 'Saving…' : 'Save'}
               </button>
             </div>
           </div>
@@ -1520,7 +1519,7 @@ function SettingsTab() {
                 onClick={() => delTarget.kind === 'robot' ? delRt.mutate(delTarget.id) : delLv.mutate(delTarget.id)}
                 disabled={delRt.isPending || delLv.isPending}
                 className="flex-1 py-2.5 rounded-xl bg-error text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity">
-                {(delRt.isPending || delLv.isPending) ? 'Deletingâ€¦' : 'Delete'}
+                {(delRt.isPending || delLv.isPending) ? 'Deleting…' : 'Delete'}
               </button>
             </div>
           </div>
@@ -1530,9 +1529,9 @@ function SettingsTab() {
   );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ────────────────────────────────────────────────────────────────────────────
 // Page
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ────────────────────────────────────────────────────────────────────────────
 type TabKey = 'courses' | 'enroll' | 'staff' | 'announcements' | 'settings';
 
 export default function ManagePage() {
@@ -1575,4 +1574,3 @@ export default function ManagePage() {
     </AppShell>
   );
 }
-

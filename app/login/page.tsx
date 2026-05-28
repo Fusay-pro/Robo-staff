@@ -1,5 +1,4 @@
-﻿'use client';
-/* eslint-disable @typescript-eslint/no-explicit-any */
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -96,7 +95,7 @@ export default function LoginPage() {
               <label className="text-sm font-semibold text-on-surface-variant">{t('login.password')}</label>
               <div className="flex items-center gap-3 rounded-xl border border-outline-variant bg-surface-container-low px-4 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all">
                 <span className="material-symbols-outlined text-outline text-[20px]">lock</span>
-                <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" required
+                <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required
                   className="flex-1 bg-transparent border-none focus:ring-0 py-3.5 text-on-surface placeholder:text-outline outline-none" />
                 <button type="button" onClick={() => setShowPass(p => !p)} className="text-on-surface-variant hover:text-primary transition-colors">
                   <span className="material-symbols-outlined text-[20px]">{showPass ? 'visibility_off' : 'visibility'}</span>
@@ -118,4 +117,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

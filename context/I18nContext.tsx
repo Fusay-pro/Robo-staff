@@ -1,6 +1,6 @@
-﻿'use client';
+'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { messages } from '@/lib/i18n/messages';
 
 type Locale = 'en' | 'th';
@@ -24,7 +24,11 @@ function detectInitial(): Locale {
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(() => detectInitial());
+  const [locale, setLocaleState] = useState<Locale>('en');
+
+  useEffect(() => {
+    setLocaleState(detectInitial());
+  }, []);
 
   function setLocale(l: Locale) {
     setLocaleState(l);
@@ -32,10 +36,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }
 
   function t(key: string, params?: Record<string, string | number>): string {
-    const fallback = messages.en as Record<string, string>;
-    const dict = (messages as Record<Locale, Record<string, string>>)[locale] || fallback;
+    const dict = (messages as any)[locale] || messages.en;
     let str = dict[key];
-    if (str == null) str = fallback[key] ?? key;
+    if (str == null) str = (messages.en as any)[key] ?? key;
     if (params) {
       for (const k in params) str = str.replace(`{${k}}`, String(params[k]));
     }

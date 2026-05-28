@@ -1,5 +1,4 @@
-﻿'use client';
-/* eslint-disable @typescript-eslint/no-explicit-any */
+'use client';
 
 import AppShell from '@/components/AppShell';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -10,14 +9,14 @@ import DateRangePicker from '@/components/DateRangePicker';
 import { useAuth } from '@/context/AuthContext';
 import { useT } from '@/context/I18nContext';
 
-// â”€â”€ constants â”€â”€
+// ── constants ──
 const CAL_DAYS  = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
 const MONTHS    = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const WEEKDAYS  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const PAGE_SIZE = 20;
 const EMPTY: any[] = [];
 
-// â”€â”€ helpers â”€â”€
+// ── helpers ──
 function toDateStr(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
@@ -33,7 +32,7 @@ function fmtDisplay(dateStr: string) {
   return new Date(dateStr + 'T00:00:00').toLocaleDateString('en', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-// â”€â”€ wizard types â”€â”€
+// ── wizard types ──
 type Recurrence = 'once' | 'weekly' | 'biweekly' | 'monthly';
 type EndType    = 'count' | 'date';
 
@@ -62,7 +61,7 @@ const emptyWizard = (): WizardForm => ({
   endType: 'count', endDate: '', sessionCount: '8',
 });
 
-// â”€â”€ recurrence logic â”€â”€
+// ── recurrence logic ──
 function generateDates(f: WizardForm): string[] {
   const start = new Date(f.date + 'T00:00:00');
   if (f.recurrence === 'once') return [f.date];
@@ -106,19 +105,19 @@ function generateDates(f: WizardForm): string[] {
 }
 
 function recurrencePreview(f: WizardForm): string {
-  if (f.recurrence === 'once') return f.date ? `One-time Â· ${fmtDisplay(f.date)}` : '';
+  if (f.recurrence === 'once') return f.date ? `One-time · ${fmtDisplay(f.date)}` : '';
   const dates = generateDates(f);
-  if (!dates.length) return 'No sessions â€” pick days above';
+  if (!dates.length) return 'No sessions — pick days above';
   const label  = { weekly: 'Every week', biweekly: 'Every 2 weeks', monthly: 'Every month' }[f.recurrence]!;
   const dayStr = f.recurrenceDays.map(d => WEEKDAYS[d]).join(', ');
   const first  = fmtDisplay(dates[0]);
   const last   = dates.length > 1 ? fmtDisplay(dates[dates.length - 1]) : '';
   const count  = `${dates.length} session${dates.length !== 1 ? 's' : ''}`;
-  const dayPart = f.recurrence !== 'monthly' ? ` on ${dayStr || 'â€”'}` : '';
-  return `${label}${dayPart} Â· ${count} Â· ${first}${last && last !== first ? ` â†’ ${last}` : ''}`;
+  const dayPart = f.recurrence !== 'monthly' ? ` on ${dayStr || '—'}` : '';
+  return `${label}${dayPart} · ${count} · ${first}${last && last !== first ? ` → ${last}` : ''}`;
 }
 
-// â”€â”€ edit form â”€â”€
+// ── edit form ──
 interface EditForm { date: string; start_time: string; end_time: string; max_capacity: string; teacher_user_id: string; }
 function toEditForm(s: any): EditForm {
   const st = new Date(s.starts_at), en = new Date(s.ends_at);
@@ -131,7 +130,7 @@ function toEditForm(s: any): EditForm {
   };
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════════════════
 export default function SchedulePage() {
   const qc       = useQueryClient();
   const { role } = useAuth();
@@ -186,7 +185,7 @@ export default function SchedulePage() {
   const firstDay    = getMondayFirst(calYear, calMonth);
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
 
-  // â”€â”€ queries â”€â”€
+  // ── queries ──
   const { data: calSessions = [], isLoading: calLoading } = useQuery<any[]>({
     queryKey: ['schedules-month', calYear, calMonth],
     queryFn: () => {
@@ -303,7 +302,7 @@ export default function SchedulePage() {
     d.setDate(d.getDate() + i);
     return d;
   });
-  const mobileWeekLabel = `${mobileWeekStart.toLocaleDateString('en', { month: 'short', day: 'numeric' })} â€“ ${mobileWeekDays[6].toLocaleDateString('en', { month: 'short', day: 'numeric' })}`;
+  const mobileWeekLabel = `${mobileWeekStart.toLocaleDateString('en', { month: 'short', day: 'numeric' })} – ${mobileWeekDays[6].toLocaleDateString('en', { month: 'short', day: 'numeric' })}`;
   const goMobileWeek = (dir: 1 | -1) => {
     const d = new Date(selectedDate + 'T00:00:00');
     d.setDate(d.getDate() + dir * 7);
@@ -311,7 +310,7 @@ export default function SchedulePage() {
   };
   const todayStr = toDateStr(today);
 
-  // â”€â”€ mutations â”€â”€
+  // ── mutations ──
   const createMut = useMutation({
     mutationFn: (body: any) => client.post('/schedules', body).then(r => r.data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['schedules-list'] }); qc.invalidateQueries({ queryKey: ['schedules-month'] }); },
@@ -347,7 +346,7 @@ export default function SchedulePage() {
     },
   });
 
-  // â”€â”€ wizard helpers â”€â”€
+  // ── wizard helpers ──
   const setW = (patch: Partial<WizardForm>) => setWiz(w => ({ ...w, ...patch }));
   const toggleDay = (d: number) => setWiz(w => ({
     ...w,
@@ -445,7 +444,7 @@ export default function SchedulePage() {
 
   const STEP_LABELS = ['Session Info', 'Date & Time', 'Recurrence', 'Confirm'];
 
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // ══════════════════════════════════════════════════════
   return (
     <AppShell>
       <div className="px-4 py-6 md:px-10 md:py-8 pb-24 md:pb-8 h-full">
@@ -484,7 +483,7 @@ export default function SchedulePage() {
           ))}
         </div>
 
-        {/* â”€â”€ LIST VIEW â”€â”€ */}
+        {/* ── LIST VIEW ── */}
         {tab === 'list' && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -517,7 +516,7 @@ export default function SchedulePage() {
               <div className="flex items-center gap-2 bg-surface-container-lowest rounded-xl px-3 py-2 border border-outline-variant/20 shadow-sm">
                 <span className="material-symbols-outlined text-on-surface-variant text-[16px]">search</span>
                 <input value={filterCourse} onChange={e => setFilterCourse(e.target.value)}
-                  placeholder="Search course nameâ€¦"
+                  placeholder="Search course name…"
                   className="bg-transparent border-none outline-none text-sm text-on-surface placeholder:text-on-surface-variant w-44" />
                 {filterCourse && (
                   <button onClick={() => setFilterCourse('')} className="text-on-surface-variant hover:text-on-surface">
@@ -573,7 +572,7 @@ export default function SchedulePage() {
                             </span>
                             <span className="flex items-center gap-1">
                               <span className="material-symbols-outlined text-[14px]">schedule</span>
-                              {fmtTime(s.starts_at)} â€“ {fmtTime(s.ends_at)}
+                              {fmtTime(s.starts_at)} – {fmtTime(s.ends_at)}
                             </span>
                           </div>
                           <div className="flex items-center justify-between gap-2 mt-2.5">
@@ -622,7 +621,7 @@ export default function SchedulePage() {
                               {start.toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric' })}
                             </td>
                             <td className="px-6 py-4 text-on-surface-variant font-medium">
-                              {fmtTime(s.starts_at)} â€“ {fmtTime(s.ends_at)}
+                              {fmtTime(s.starts_at)} – {fmtTime(s.ends_at)}
                             </td>
                             <td className="px-6 py-4">
                               <Link href={`/schedules/${s.schedule_id}`}
@@ -671,7 +670,7 @@ export default function SchedulePage() {
                   </table>
                   <div className="px-4 md:px-6 py-4 border-t border-outline-variant/20 flex items-center justify-between">
                     <p className="text-xs text-on-surface-variant">
-                      Showing {page * PAGE_SIZE + 1}â€“{Math.min((page + 1) * PAGE_SIZE, total)} of {total} sessions
+                      Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, total)} of {total} sessions
                     </p>
                     <div className="flex gap-2">
                       <button disabled={page === 0} onClick={() => setPage(p => p - 1)}
@@ -688,7 +687,7 @@ export default function SchedulePage() {
               )}
             </div>
 
-            {/* â”€â”€ Holidays panel â”€â”€ */}
+            {/* ── Holidays panel ── */}
             {isOwner && holidays.length > 0 && (
               <div className="mt-8">
                 <div className="flex items-center gap-2 mb-3">
@@ -705,7 +704,7 @@ export default function SchedulePage() {
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-on-surface text-sm">{h.name}</p>
                         <p className="text-xs text-on-surface-variant mt-0.5">
-                          {fmtDisplay(h.start_date)}{h.start_date !== h.end_date ? ` â†’ ${fmtDisplay(h.end_date)}` : ''}
+                          {fmtDisplay(h.start_date)}{h.start_date !== h.end_date ? ` → ${fmtDisplay(h.end_date)}` : ''}
                         </p>
                         <p className="text-[11px] text-orange-600 font-semibold mt-1">
                           {h.cancelled_count} session{h.cancelled_count !== 1 ? 's' : ''} cancelled
@@ -724,7 +723,7 @@ export default function SchedulePage() {
           </>
         )}
 
-        {/* â”€â”€ CALENDAR VIEW â”€â”€ */}
+        {/* ── CALENDAR VIEW ── */}
         {tab === 'calendar' && (
           <>
             {/* Mobile week strip + sessions */}
@@ -806,7 +805,7 @@ export default function SchedulePage() {
                         </div>
                         <p className="text-xs text-on-surface-variant flex items-center gap-1">
                           <span className="material-symbols-outlined text-[12px]">schedule</span>
-                          {fmtTime(s.starts_at)} â€“ {fmtTime(s.ends_at)}
+                          {fmtTime(s.starts_at)} – {fmtTime(s.ends_at)}
                         </p>
                       </Link>
                     ))}
@@ -927,7 +926,7 @@ export default function SchedulePage() {
                       </p>
                       <p className="text-xs text-on-surface-variant mt-0.5 flex items-center gap-1">
                         <span className="material-symbols-outlined text-[12px]">schedule</span>
-                        {fmtTime(s.starts_at)} â€“ {fmtTime(s.ends_at)}
+                        {fmtTime(s.starts_at)} – {fmtTime(s.ends_at)}
                       </p>
                     </Link>
                   ))}
@@ -939,9 +938,9 @@ export default function SchedulePage() {
         )}
       </div>
 
-      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+      {/* ════════════════════════════════════════
           WIZARD MODAL
-      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+      ════════════════════════════════════════ */}
       {wizOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeWizard} />
@@ -969,7 +968,7 @@ export default function SchedulePage() {
             {/* Wizard body */}
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
 
-              {/* â”€â”€ STEP 1: Session Info â”€â”€ */}
+              {/* ── STEP 1: Session Info ── */}
               {wizStep === 1 && (
                 <>
                   <div>
@@ -985,7 +984,7 @@ export default function SchedulePage() {
                             setShowDrop(true);
                           }}
                           onFocus={() => setShowDrop(true)}
-                          placeholder="Search or type session nameâ€¦"
+                          placeholder="Search or type session name…"
                           className="flex-1 bg-transparent outline-none text-sm text-on-surface placeholder:text-on-surface-variant"
                         />
                         {courseSearch && (
@@ -1031,7 +1030,7 @@ export default function SchedulePage() {
                     <textarea
                       value={wiz.notes}
                       onChange={e => setW({ notes: e.target.value })}
-                      placeholder="Any notes about this sessionâ€¦"
+                      placeholder="Any notes about this session…"
                       rows={3}
                       className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
                     />
@@ -1039,7 +1038,7 @@ export default function SchedulePage() {
                 </>
               )}
 
-              {/* â”€â”€ STEP 2: Date & Time â”€â”€ */}
+              {/* ── STEP 2: Date & Time ── */}
               {wizStep === 2 && (
                 <>
                   <div>
@@ -1154,7 +1153,7 @@ export default function SchedulePage() {
                 </>
               )}
 
-              {/* â”€â”€ STEP 3: Recurrence â”€â”€ */}
+              {/* ── STEP 3: Recurrence ── */}
               {wizStep === 3 && (
                 <>
                   <div>
@@ -1232,7 +1231,7 @@ export default function SchedulePage() {
                   {/* Preview */}
                   <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-primary mb-1.5">{t('schedule.preview')}</p>
-                    <p className="text-sm font-semibold text-on-surface">{recurrencePreview(wiz) || 'â€”'}</p>
+                    <p className="text-sm font-semibold text-on-surface">{recurrencePreview(wiz) || '—'}</p>
                     {wiz.recurrence !== 'once' && generateDates(wiz).length > 0 && (
                       <p className="text-xs text-on-surface-variant mt-1">
                         {generateDates(wiz).length} sessions will be created
@@ -1242,7 +1241,7 @@ export default function SchedulePage() {
                 </>
               )}
 
-              {/* â”€â”€ STEP 4: Confirm â”€â”€ */}
+              {/* ── STEP 4: Confirm ── */}
               {wizStep === 4 && (
                 <>
                   <p className="text-sm text-on-surface-variant">Review everything before creating.</p>
@@ -1254,7 +1253,7 @@ export default function SchedulePage() {
                       </div>
                       <div>
                         <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">{t('schedule.session')}</p>
-                        <p className="font-bold text-on-surface">{wiz.courseName || 'â€”'}</p>
+                        <p className="font-bold text-on-surface">{wiz.courseName || '—'}</p>
                         {wiz.notes && <p className="text-xs text-on-surface-variant mt-0.5">{wiz.notes}</p>}
                         {wiz.courseId && <p className="text-[11px] text-emerald-600 font-semibold mt-0.5 flex items-center gap-1">
                           <span className="material-symbols-outlined text-[12px]">link</span>Linked to course
@@ -1267,7 +1266,7 @@ export default function SchedulePage() {
                       </div>
                       <div>
                         <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">{t('schedule.time')}</p>
-                        <p className="font-bold text-on-surface">{wiz.startTime} â€“ {wiz.endTime}</p>
+                        <p className="font-bold text-on-surface">{wiz.startTime} – {wiz.endTime}</p>
                         <p className="text-xs text-on-surface-variant mt-0.5">{fmtDisplay(wiz.date)}</p>
                       </div>
                     </div>
@@ -1329,9 +1328,9 @@ export default function SchedulePage() {
         </div>
       )}
 
-      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+      {/* ════════════════════════════════════════
           HOLIDAY WIZARD MODAL
-      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+      ════════════════════════════════════════ */}
       {holOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setHolOpen(false)} />
@@ -1361,7 +1360,7 @@ export default function SchedulePage() {
             {/* Body */}
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
 
-              {/* â”€â”€ Step 1: Name + date range â”€â”€ */}
+              {/* ── Step 1: Name + date range ── */}
               {holStep === 1 && (
                 <>
                   <div>
@@ -1395,7 +1394,7 @@ export default function SchedulePage() {
                         <div className={`flex-1 px-3 py-2 rounded-xl border text-center font-semibold ${holFrom ? 'border-orange-300 bg-orange-50 text-orange-700' : 'border-outline-variant/30 text-on-surface-variant'}`}>
                           {holFrom ? fmtDisplay(holFrom) : 'Start date'}
                         </div>
-                        <span className="self-center text-on-surface-variant">â†’</span>
+                        <span className="self-center text-on-surface-variant">→</span>
                         <div className={`flex-1 px-3 py-2 rounded-xl border text-center font-semibold ${holTo ? 'border-orange-300 bg-orange-50 text-orange-700' : 'border-outline-variant/30 text-on-surface-variant'}`}>
                           {holTo ? fmtDisplay(holTo) : 'End date'}
                         </div>
@@ -1451,13 +1450,13 @@ export default function SchedulePage() {
                 </>
               )}
 
-              {/* â”€â”€ Step 2: Preview sessions â”€â”€ */}
+              {/* ── Step 2: Preview sessions ── */}
               {holStep === 2 && (
                 <>
                   <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4">
                     <p className="text-xs font-bold text-orange-700 uppercase tracking-wider mb-1">{t('schedule.holidayPeriod')}</p>
                     <p className="font-bold text-on-surface">{holName}</p>
-                    <p className="text-sm text-on-surface-variant">{fmtDisplay(holFrom)} â†’ {fmtDisplay(holTo)}</p>
+                    <p className="text-sm text-on-surface-variant">{fmtDisplay(holFrom)} → {fmtDisplay(holTo)}</p>
                   </div>
 
                   {holPreviewing ? (
@@ -1485,7 +1484,7 @@ export default function SchedulePage() {
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold text-on-surface truncate">{s.course_name || s.contract_school_name || 'Session'}</p>
                               <p className="text-xs text-on-surface-variant">
-                                {new Date(s.starts_at).toLocaleDateString('en', { weekday: 'short', day: 'numeric', month: 'short' })} Â· {fmtTime(s.starts_at)} â€“ {fmtTime(s.ends_at)}
+                                {new Date(s.starts_at).toLocaleDateString('en', { weekday: 'short', day: 'numeric', month: 'short' })} · {fmtTime(s.starts_at)} – {fmtTime(s.ends_at)}
                               </p>
                             </div>
                           </div>
@@ -1496,7 +1495,7 @@ export default function SchedulePage() {
                 </>
               )}
 
-              {/* â”€â”€ Step 3: Confirm â”€â”€ */}
+              {/* ── Step 3: Confirm ── */}
               {holStep === 3 && (
                 <>
                   <p className="text-sm text-on-surface-variant">All sessions in this period will be soft-cancelled. You can restore them anytime from the Holidays panel.</p>
@@ -1517,7 +1516,7 @@ export default function SchedulePage() {
                       <div>
                         <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">{t('schedule.periodLabel')}</p>
                         <p className="font-bold text-on-surface">{fmtDisplay(holFrom)}</p>
-                        {holFrom !== holTo && <p className="text-sm text-on-surface-variant">â†’ {fmtDisplay(holTo)}</p>}
+                        {holFrom !== holTo && <p className="text-sm text-on-surface-variant">→ {fmtDisplay(holTo)}</p>}
                       </div>
                     </div>
                     <div className="px-4 py-3.5 flex items-start gap-3">
@@ -1561,7 +1560,7 @@ export default function SchedulePage() {
         </div>
       )}
 
-      {/* â”€â”€ RESTORE CONFIRM â”€â”€ */}
+      {/* ── RESTORE CONFIRM ── */}
       {restoreTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setRestoreTarget(null)} />
@@ -1583,14 +1582,14 @@ export default function SchedulePage() {
               </button>
               <button onClick={() => restoreHolMut.mutate(restoreTarget.holiday_id)} disabled={restoreHolMut.isPending}
                 className="flex-1 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity">
-                {restoreHolMut.isPending ? 'Restoringâ€¦' : 'Restore'}
+                {restoreHolMut.isPending ? 'Restoring…' : 'Restore'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* â”€â”€ EDIT MODAL â”€â”€ */}
+      {/* ── EDIT MODAL ── */}
       {editTarget && editForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setEditTarget(null)} />
@@ -1676,7 +1675,7 @@ export default function SchedulePage() {
         </div>
       )}
 
-      {/* â”€â”€ DELETE CONFIRM â”€â”€ */}
+      {/* ── DELETE CONFIRM ── */}
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteTarget(null)} />
@@ -1707,4 +1706,3 @@ export default function SchedulePage() {
     </AppShell>
   );
 }
-

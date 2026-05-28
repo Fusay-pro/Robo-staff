@@ -1,5 +1,4 @@
-﻿'use client';
-/* eslint-disable @typescript-eslint/no-explicit-any */
+'use client';
 
 import AppShell from '@/components/AppShell';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -128,7 +127,7 @@ export default function ScheduleDetailPage() {
                 <button onClick={saveSession} disabled={sessionMut.isPending}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity">
                   <span className="material-symbols-outlined text-[16px]">check</span>
-                  {sessionMut.isPending ? 'Savingâ€¦' : 'Save Changes'}
+                  {sessionMut.isPending ? 'Saving…' : 'Save Changes'}
                 </button>
               </div>
             ) : (
@@ -147,10 +146,10 @@ export default function ScheduleDetailPage() {
           </div>
         ) : (
           <>
-            {/* Session card â€” view or edit */}
+            {/* Session card — view or edit */}
             <div className={`rounded-3xl p-6 mb-6 transition-all ${editMode ? 'bg-primary/5 ring-2 ring-primary/20' : 'bg-surface-container-lowest shadow-sm'}`}>
               {editMode ? (
-                /* â”€â”€ EDIT VIEW â”€â”€ */
+                /* ── EDIT VIEW ── */
                 <div>
                   <p className="text-xs font-bold uppercase tracking-widest text-primary mb-4">Editing Session</p>
                   <h2 className="text-xl font-bold text-on-surface mb-5">{sessionName}</h2>
@@ -186,7 +185,7 @@ export default function ScheduleDetailPage() {
                   )}
                 </div>
               ) : (
-                /* â”€â”€ READ VIEW â”€â”€ */
+                /* ── READ VIEW ── */
                 <>
                   <div className="flex items-center gap-4 mb-5">
                     <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
@@ -208,7 +207,7 @@ export default function ScheduleDetailPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="bg-surface-container rounded-2xl p-3.5">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">Time</p>
-                      <p className="font-bold text-on-surface text-sm">{fmtTime(session.starts_at)} â€“ {fmtTime(session.ends_at)}</p>
+                      <p className="font-bold text-on-surface text-sm">{fmtTime(session.starts_at)} – {fmtTime(session.ends_at)}</p>
                     </div>
                     {session?.robot_type_name && (
                       <div className="bg-surface-container rounded-2xl p-3.5">
@@ -334,7 +333,7 @@ export default function ScheduleDetailPage() {
               </button>
               <button onClick={() => removeMut.mutate(deleteTarget.enrollment_id)} disabled={removeMut.isPending}
                 className="flex-1 py-2.5 rounded-xl bg-error text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity">
-                {removeMut.isPending ? 'Removingâ€¦' : 'Remove'}
+                {removeMut.isPending ? 'Removing…' : 'Remove'}
               </button>
             </div>
           </div>
@@ -343,4 +342,3 @@ export default function ScheduleDetailPage() {
     </AppShell>
   );
 }
-

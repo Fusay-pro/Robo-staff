@@ -42,12 +42,23 @@ export default function NotificationBell() {
   const { t } = useT();
   const [open, setOpen] = useState(false);
   const [dismissedTick, setDismissedTick] = useState(0);
-  const [dropPos, setDropPos] = useState({ top: 0, right: 0 });
+  const [dropPos, setDropPos] = useState({ top: 0, right: 0, isMobile: false });
   const router = useRouter();
   const { role } = useAuth();
   const isOwner = role === 'owner' || role === 'super_owner';
   const dropRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
+
+  function computeDropPos() {
+    if (!btnRef.current || typeof window === 'undefined') return;
+    const r = btnRef.current.getBoundingClientRect();
+    const isMobile = window.innerWidth < 640;
+    setDropPos({
+      top: r.bottom + 8,
+      right: Math.max(8, window.innerWidth - r.right),
+      isMobile,
+    });
+  }
 
   const { data } = useQuery<any>({
     queryKey: ['alerts-feed'],
@@ -63,8 +74,19 @@ export default function NotificationBell() {
       const insideDrop = dropRef.current?.contains(target);
       if (!insideBtn && !insideDrop) setOpen(false);
     }
-    if (open) document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    if (open) document.addEventListener('pointerdown', handler);
+    return () => document.removeEventListener('pointerdown', handler);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || typeof window === 'undefined') return;
+    computeDropPos();
+    window.addEventListener('resize', computeDropPos);
+    window.addEventListener('scroll', computeDropPos, true);
+    return () => {
+      window.removeEventListener('resize', computeDropPos);
+      window.removeEventListener('scroll', computeDropPos, true);
+    };
   }, [open]);
 
   const dismissed = useMemo(() => loadDismissed(), [dismissedTick]);
@@ -84,16 +106,19 @@ export default function NotificationBell() {
   const showCancel   = isOwner && cancelCount > 0 && !isDismissed('pending-cancellations');
 
   const totalCount = (next ? 1 : 0) + lowKids.length + (showPending ? 1 : 0) + (showCancel ? 1 : 0);
+  const markAllAsRead = () => {
+    if (next) dismiss(`next-${next.schedule_id}`);
+    lowKids.forEach((k: any) => dismiss(`lowkid-${k.student_id}-${k.schedule_id}`));
+    if (showPending) dismiss('pending-approvals');
+    if (showCancel) dismiss('pending-cancellations');
+  };
 
   return (
     <div className="relative">
       <button
         ref={btnRef}
         onClick={() => {
-          if (!open && btnRef.current) {
-            const r = btnRef.current.getBoundingClientRect();
-            setDropPos({ top: r.bottom + 8, right: window.innerWidth - r.right });
-          }
+          if (!open) computeDropPos();
           setOpen(v => !v);
         }}
         className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors shrink-0"
@@ -109,17 +134,32 @@ export default function NotificationBell() {
       </button>
 
       {open && typeof document !== 'undefined' && createPortal(
-        <div ref={dropRef} style={{ position: 'fixed', top: dropPos.top, right: dropPos.right, zIndex: 9999 }}
-          className="w-[340px] max-w-[calc(100vw-2rem)] bg-surface rounded-2xl shadow-2xl border border-outline-variant/30 overflow-hidden">
+        <div
+          ref={dropRef}
+          style={
+            dropPos.isMobile
+              ? { position: 'fixed', top: dropPos.top, left: 0, right: 0, zIndex: 9999 }
+              : { position: 'fixed', top: dropPos.top, right: dropPos.right, zIndex: 9999 }
+          }
+          className={`${dropPos.isMobile ? 'w-auto max-w-none rounded-3xl mx-3 border-outline-variant/40' : 'w-[340px] max-w-[calc(100vw-2rem)] rounded-2xl'} bg-surface shadow-2xl border overflow-hidden`}
+        >
           {/* Header */}
           <div className="px-5 py-4 border-b border-outline-variant/20 flex items-center justify-between">
             <h3 className="font-bold text-on-surface text-base">{t('bell.notifications')}</h3>
-            {totalCount > 0 && (
+            {dropPos.isMobile ? (
+              <button
+                onClick={markAllAsRead}
+                disabled={totalCount === 0}
+                className="text-xs font-bold text-primary disabled:text-on-surface-variant disabled:opacity-60"
+              >
+                Mark all as read
+              </button>
+            ) : totalCount > 0 ? (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-error/10 text-error">{totalCount}</span>
-            )}
+            ) : null}
           </div>
 
-          <div className="max-h-[420px] overflow-y-auto">
+          <div className={`${dropPos.isMobile ? 'max-h-[calc(100dvh-11rem)] bg-slate-50' : 'max-h-[420px]'} overflow-y-auto`}>
 
             {/* Next session */}
             {next && (
@@ -157,7 +197,7 @@ export default function NotificationBell() {
             {/* Low class students */}
             {lowKids.length > 0 && (
               <>
-                <div className="px-5 py-2 bg-orange-50 border-b border-orange-100">
+                <div className={`${dropPos.isMobile ? 'hidden' : 'px-5 py-2 bg-orange-50 border-b border-orange-100'}`}>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-orange-700 flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
                     {t('bell.lowClassesToday')}
@@ -256,6 +296,19 @@ export default function NotificationBell() {
               </div>
             )}
           </div>
+          {dropPos.isMobile && totalCount > 0 && (
+            <div className="px-5 py-3 border-t border-outline-variant/20 text-center bg-white">
+              <button
+                className="text-sm font-bold text-primary"
+                onClick={() => {
+                  setOpen(false);
+                  router.push('/today');
+                }}
+              >
+                View all notifications
+              </button>
+            </div>
+          )}
         </div>,
         document.body
       )}

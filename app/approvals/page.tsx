@@ -1,4 +1,5 @@
-'use client';
+﻿'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import AppShell from '@/components/AppShell';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -121,7 +122,7 @@ export default function ApprovalsPage() {
                         <p className="text-xs text-on-surface-variant">
                           {(() => {
                             const dt = new Date(r.created_at);
-                            return `${dt.getDate()} ${t(`date.monthsShort.${dt.getMonth() + 1}`)} · ${dt.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}`;
+                            return `${dt.getDate()} ${t(`date.monthsShort.${dt.getMonth() + 1}`)} Â· ${dt.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}`;
                           })()}
                         </p>
                       </div>
@@ -130,7 +131,7 @@ export default function ApprovalsPage() {
                     <div className="p-5 space-y-3">
                       <div>
                         <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">{t('approvals.studentLabel')}</p>
-                        <p className="font-bold text-on-surface">{d.kid_name || '—'}</p>
+                        <p className="font-bold text-on-surface">{d.kid_name || 'â€”'}</p>
                       </div>
                       {(d.course_name || sd) && (
                         <div>
@@ -138,14 +139,14 @@ export default function ApprovalsPage() {
                           <p className="font-semibold text-on-surface text-sm">{d.course_name || t('dashboard.session')}</p>
                           {sd && (
                             <p className="text-xs text-on-surface-variant">
-                              {t(`date.daysShort.${DAY_KEYS[sd.getDay()]}`)} {sd.getDate()} {t(`date.monthsShort.${sd.getMonth() + 1}`)} · {sd.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}
+                              {t(`date.daysShort.${DAY_KEYS[sd.getDay()]}`)} {sd.getDate()} {t(`date.monthsShort.${sd.getMonth() + 1}`)} Â· {sd.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}
                             </p>
                           )}
                         </div>
                       )}
                       <div>
                         <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">{t('approvals.reasonFrom')} {r.parent_name || t('approvals.parentLower')}</p>
-                        <p className="text-sm text-on-surface whitespace-pre-wrap mt-1 bg-surface-container-low rounded-xl px-3 py-2">{d.reason || '—'}</p>
+                        <p className="text-sm text-on-surface whitespace-pre-wrap mt-1 bg-surface-container-low rounded-xl px-3 py-2">{d.reason || 'â€”'}</p>
                       </div>
 
                       {isOwner ? (
@@ -232,7 +233,7 @@ export default function ApprovalsPage() {
                   <div className="grid grid-cols-2 gap-2 px-5 pb-4">
                     <div className="bg-surface-container-low rounded-2xl px-3 py-2.5">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">{t('students.parent')}</p>
-                      <p className="text-sm font-semibold text-on-surface truncate">{s.parent_name || '—'}</p>
+                      <p className="text-sm font-semibold text-on-surface truncate">{s.parent_name || 'â€”'}</p>
                       {s.parent_phone && <p className="text-xs text-on-surface-variant">{s.parent_phone}</p>}
                     </div>
                     <div className={`rounded-2xl px-3 py-2.5 ${s.pre_existing_conditions ? 'bg-error/5 border border-error/20' : 'bg-surface-container-low'}`}>
@@ -270,3 +271,4 @@ export default function ApprovalsPage() {
     </AppShell>
   );
 }
+

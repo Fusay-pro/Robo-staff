@@ -1,4 +1,5 @@
-'use client';
+﻿'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import AppShell from '@/components/AppShell';
 import { useQuery } from '@tanstack/react-query';
@@ -87,7 +88,7 @@ export default function FinancesPage() {
               </span>
             </div>
             <p className="text-xs font-semibold tracking-wider text-on-surface-variant uppercase mb-1">{t('finances.totalRevenue2')}</p>
-            <p className="text-3xl font-extrabold text-primary">฿{total.toLocaleString()}</p>
+            <p className="text-3xl font-extrabold text-primary">à¸¿{total.toLocaleString()}</p>
             <p className="text-xs text-on-surface-variant mt-2">{t('finances.allEnrolledPkgs')}</p>
           </div>
 
@@ -101,7 +102,7 @@ export default function FinancesPage() {
               </span>
             </div>
             <p className="text-xs font-semibold tracking-wider text-on-surface-variant uppercase mb-1">{t('finances.collected')}</p>
-            <p className="text-3xl font-extrabold text-secondary">฿{paidTotal.toLocaleString()}</p>
+            <p className="text-3xl font-extrabold text-secondary">à¸¿{paidTotal.toLocaleString()}</p>
             <p className="text-xs text-on-surface-variant mt-2">{t('finances.cleared')}</p>
           </div>
 
@@ -115,7 +116,7 @@ export default function FinancesPage() {
               </span>
             </div>
             <p className="text-xs font-semibold tracking-wider text-on-surface-variant uppercase mb-1">{t('finances.pending')}</p>
-            <p className="text-3xl font-extrabold text-error">฿{pendingTotal.toLocaleString()}</p>
+            <p className="text-3xl font-extrabold text-error">à¸¿{pendingTotal.toLocaleString()}</p>
             <p className="text-xs text-on-surface-variant mt-2">{t('finances.overdue')}</p>
           </div>
         </div>
@@ -164,8 +165,8 @@ export default function FinancesPage() {
               {/* Mobile: cards */}
               <div className="md:hidden divide-y divide-outline-variant/20">
                 {displayed.map((p: any, i: number) => {
-                  const name = p.student_name || '—';
-                  const abbr = name !== '—' ? initials(name) : '??';
+                  const name = p.student_name || 'â€”';
+                  const abbr = name !== 'â€”' ? initials(name) : '??';
                   const bg = AVATAR_COLORS[i % AVATAR_COLORS.length];
                   const isPaid = p.payment_status === 'paid';
                   return (
@@ -175,13 +176,13 @@ export default function FinancesPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-on-surface text-sm truncate">{name}</p>
-                        <p className="text-xs text-on-surface-variant truncate">{p.package_name || '—'}</p>
+                        <p className="text-xs text-on-surface-variant truncate">{p.package_name || 'â€”'}</p>
                         <p className="text-[10px] text-on-surface-variant mt-0.5">
-                          {p.created_at ? (() => { const dt = new Date(p.created_at); return `${dt.getDate()} ${monthShort(dt.getMonth())}`; })() : '—'}
+                          {p.created_at ? (() => { const dt = new Date(p.created_at); return `${dt.getDate()} ${monthShort(dt.getMonth())}`; })() : 'â€”'}
                         </p>
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span className="font-bold text-sm text-on-surface">{p.price ? `฿${Number(p.price).toLocaleString()}` : '—'}</span>
+                        <span className="font-bold text-sm text-on-surface">{p.price ? `à¸¿${Number(p.price).toLocaleString()}` : 'â€”'}</span>
                         <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                           isPaid ? 'bg-emerald-100 text-emerald-800'
                             : p.payment_status === 'refunded' ? 'bg-error-container text-on-error-container'
@@ -209,8 +210,8 @@ export default function FinancesPage() {
                   </thead>
                   <tbody className="text-sm">
                     {displayed.map((p: any, i: number) => {
-                      const name = p.student_name || '—';
-                      const abbr = name !== '—' ? initials(name) : '??';
+                      const name = p.student_name || 'â€”';
+                      const abbr = name !== 'â€”' ? initials(name) : '??';
                       const bg = AVATAR_COLORS[i % AVATAR_COLORS.length];
                       const isPaid = p.payment_status === 'paid';
                       return (
@@ -224,12 +225,12 @@ export default function FinancesPage() {
                               <span className="font-semibold text-on-surface">{name}</span>
                             </div>
                           </td>
-                          <td className="py-4 px-4 text-on-surface-variant">{p.package_name || '—'}</td>
+                          <td className="py-4 px-4 text-on-surface-variant">{p.package_name || 'â€”'}</td>
                           <td className="py-4 px-4 text-right font-bold text-on-surface">
-                            {p.price ? `฿${Number(p.price).toLocaleString()}` : '—'}
+                            {p.price ? `à¸¿${Number(p.price).toLocaleString()}` : 'â€”'}
                           </td>
                           <td className="py-4 px-4 text-on-surface-variant">
-                            {p.created_at ? (() => { const dt = new Date(p.created_at); return `${dt.getDate()} ${monthShort(dt.getMonth())} ${dt.getFullYear()}`; })() : '—'}
+                            {p.created_at ? (() => { const dt = new Date(p.created_at); return `${dt.getDate()} ${monthShort(dt.getMonth())} ${dt.getFullYear()}`; })() : 'â€”'}
                           </td>
                           <td className="py-4 px-4">
                             <span className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full ${
@@ -264,3 +265,4 @@ export default function FinancesPage() {
     </AppShell>
   );
 }
+

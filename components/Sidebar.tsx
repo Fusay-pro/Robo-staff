@@ -1,9 +1,10 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useT } from '@/context/I18nContext';
+import { navItemsForRole, isActivePath } from '@/lib/nav';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -11,22 +12,7 @@ export default function Sidebar() {
   const { t } = useT();
   const isOwner = role === 'owner' || role === 'super_owner';
 
-  const STAFF_NAV = [
-    { href: '/today',    icon: 'calendar_today', label: t('nav.today') },
-    { href: '/schedule', icon: 'calendar_month', label: t('nav.schedule') },
-    { href: '/students', icon: 'group',          label: t('nav.students') },
-  ];
-
-  const OWNER_NAV = [
-    { href: '/dashboard', icon: 'dashboard',      label: t('nav.dashboard') },
-    { href: '/schedule',  icon: 'calendar_month', label: t('nav.schedule') },
-    { href: '/students',  icon: 'group',          label: t('nav.students') },
-    { href: '/activity',  icon: 'monitoring',     label: t('nav.activity') },
-    { href: '/approvals', icon: 'fact_check',     label: t('nav.approvals') },
-    { href: '/manage',    icon: 'tune',           label: t('nav.manage') },
-  ];
-
-  const NAV = isOwner ? OWNER_NAV : STAFF_NAV;
+  const NAV = navItemsForRole(isOwner ? 'owner' : 'staff');
 
   return (
     <aside className="fixed left-0 top-0 h-full w-[280px] hidden md:flex flex-col z-50 py-8 bg-surface border-r border-outline-variant/40">
@@ -43,8 +29,9 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 space-y-1 px-3">
-        {NAV.map(({ href, icon, label }) => {
-          const active = pathname === href || pathname.startsWith(href + '/');
+        {NAV.map(({ href, icon, labelKey }) => {
+          const active = isActivePath(pathname, href);
+          const label = t(labelKey);
           return (
             <Link
               key={href}

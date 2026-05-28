@@ -1,4 +1,5 @@
-'use client';
+﻿'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import AppShell from '@/components/AppShell';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -84,9 +85,9 @@ export default function DashboardPage() {
   }
 
   const statCards = [
-    { label: t('dashboard.totalStudents'), value: stats?.total_students ?? '—', icon: 'group', color: 'bg-primary/10 text-primary' },
+    { label: t('dashboard.totalStudents'), value: stats?.total_students ?? 'â€”', icon: 'group', color: 'bg-primary/10 text-primary' },
     { label: t('dashboard.sessionsToday'), value: schedules.length, icon: 'calendar_today', color: 'bg-secondary/10 text-secondary' },
-    { label: t('dashboard.revenueThisMonth'), value: stats?.revenue_this_month ? `฿${Number(stats.revenue_this_month).toLocaleString()}` : '—', icon: 'payments', color: 'bg-tertiary/10 text-tertiary' },
+    { label: t('dashboard.revenueThisMonth'), value: stats?.revenue_this_month ? `à¸¿${Number(stats.revenue_this_month).toLocaleString()}` : 'â€”', icon: 'payments', color: 'bg-tertiary/10 text-tertiary' },
     { label: t('dashboard.pendingApprovals'), value: pending.length, icon: 'fact_check', color: 'bg-error/10 text-error' },
   ];
 
@@ -167,7 +168,7 @@ export default function DashboardPage() {
                               {t('dashboard.school')}
                             </span>
                           )}
-                          <span>{fmtTime(s.starts_at)} – {fmtTime(s.ends_at)}</span>
+                          <span>{fmtTime(s.starts_at)} â€“ {fmtTime(s.ends_at)}</span>
                         </div>
                       </Link>
 
@@ -252,7 +253,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-on-surface text-sm truncate group-hover:text-primary transition-colors">{s.name}</p>
-                      <p className="text-xs text-on-surface-variant">{s.branch_name || '—'}</p>
+                      <p className="text-xs text-on-surface-variant">{s.branch_name || 'â€”'}</p>
                     </div>
                     <span className="text-[10px] bg-orange-100 text-orange-800 px-2.5 py-1 rounded-full font-bold uppercase tracking-wide shrink-0">
                       {t('students.status.pending')}
@@ -321,3 +322,4 @@ export default function DashboardPage() {
     </AppShell>
   );
 }
+

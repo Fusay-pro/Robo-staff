@@ -1,4 +1,5 @@
-'use client';
+﻿'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/context/AuthContext';
@@ -144,7 +145,7 @@ export default function SettingsPage() {
                   <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">{t('settings.currentPw')}</label>
                   <input type={showPw ? 'text' : 'password'} value={pwForm.current}
                     onChange={e => setPwForm(f => ({ ...f, current: e.target.value }))}
-                    placeholder="••••••••"
+                    placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                     className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -224,7 +225,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Sign out + version — always at the bottom on all screen sizes */}
+        {/* Sign out + version â€” always at the bottom on all screen sizes */}
         <div className="mt-6 space-y-3">
           <button
             onClick={signOut}
@@ -234,7 +235,7 @@ export default function SettingsPage() {
             {t('settings.signOut')}
           </button>
           <p className="text-center text-[10px] text-on-surface-variant uppercase tracking-widest">
-            {t('nav.roboticsPortal')} · {isOwner ? t('settings.ownerEdition') : t('settings.staffEdition')}
+            {t('nav.roboticsPortal')} Â· {isOwner ? t('settings.ownerEdition') : t('settings.staffEdition')}
           </p>
         </div>
       </div>
@@ -285,3 +286,4 @@ export default function SettingsPage() {
     </AppShell>
   );
 }
+

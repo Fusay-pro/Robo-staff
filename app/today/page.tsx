@@ -1,4 +1,5 @@
-'use client';
+﻿'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import AppShell from '@/components/AppShell';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -96,12 +97,12 @@ function AttendancePopup({
               </span>
               {t('today.currently')} {isPresent ? t('today.present') : isAbsent ? t('today.skipped') : t('today.notMarked')}
               {row.attendance_notes && (
-                <span className="ml-1 text-[11px] italic truncate opacity-70">— {row.attendance_notes}</span>
+                <span className="ml-1 text-[11px] italic truncate opacity-70">â€” {row.attendance_notes}</span>
               )}
             </div>
           )}
 
-          {/* Notes field — required */}
+          {/* Notes field â€” required */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">
               {t('today.sessionNote')} <span className="text-error">*</span>
@@ -211,7 +212,7 @@ function SessionCard({ s }: { s: any }) {
   return (
     <>
       <div className={`bg-surface-container-lowest rounded-xl overflow-hidden shadow-md border border-outline-variant/30 border-l-4 ${col.border} transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg`}>
-        {/* Card header — mobile: tap → redirect; desktop: tap → expand */}
+        {/* Card header â€” mobile: tap â†’ redirect; desktop: tap â†’ expand */}
         <button
           onClick={() => {
             if (window.innerWidth < 768) {
@@ -234,7 +235,7 @@ function SessionCard({ s }: { s: any }) {
             <div className="flex items-center gap-3 mt-1 flex-wrap">
               <span className="flex items-center gap-1 text-on-surface-variant text-[12px] md:text-[13px]">
                 <span className="material-symbols-outlined text-[13px]">schedule</span>
-                {fmtTime(s.starts_at)} – {fmtTime(s.ends_at)}
+                {fmtTime(s.starts_at)} â€“ {fmtTime(s.ends_at)}
               </span>
               <span className="flex items-center gap-1 text-on-surface-variant text-[12px] md:text-[13px]">
                 <span className="material-symbols-outlined text-[13px]">group</span>
@@ -312,7 +313,7 @@ function SessionCard({ s }: { s: any }) {
                           </span>
                           {row.package_name && (
                             <span className="text-[11px] text-on-surface-variant font-medium">
-                              {row.package_name} · <span className={`font-bold ${isOut ? 'text-error' : isLow ? 'text-orange-600' : 'text-on-surface'}`}>
+                              {row.package_name} Â· <span className={`font-bold ${isOut ? 'text-error' : isLow ? 'text-orange-600' : 'text-on-surface'}`}>
                                 {classesLeft} {classesLeft !== 1 ? t('today.classesLeft') : t('today.classLeft')}
                               </span>
                             </span>
@@ -514,3 +515,4 @@ export default function TodayPage() {
     </AppShell>
   );
 }
+

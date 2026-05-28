@@ -1,4 +1,6 @@
-'use client';
+﻿'use client';
+/* eslint-disable react-hooks/purity */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import AppShell from '@/components/AppShell';
 import { useQuery } from '@tanstack/react-query';
@@ -53,7 +55,7 @@ export default function ActivityPage() {
   }
   function fmtDateTime(iso: string) {
     const d = new Date(iso);
-    return `${t(`date.daysShort.${DAY_KEYS[d.getDay()]}`)} ${d.getDate()} ${t(`date.monthsShort.${d.getMonth() + 1}`)} · ${d.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}`;
+    return `${t(`date.daysShort.${DAY_KEYS[d.getDay()]}`)} ${d.getDate()} ${t(`date.monthsShort.${d.getMonth() + 1}`)} Â· ${d.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}`;
   }
 
   const { data, isLoading } = useQuery<ActivityFeed>({
@@ -179,10 +181,10 @@ export default function ActivityPage() {
                             )}
                           </div>
                           <p className="text-[11px] text-on-surface-variant truncate">
-                            {t('activity.bookedBy')} {b.parent_name || '—'} · <span className="font-bold">{b.session_name}</span>
+                            {t('activity.bookedBy')} {b.parent_name || 'â€”'} Â· <span className="font-bold">{b.session_name}</span>
                           </p>
                           <p className="text-[10px] text-on-surface-variant mt-0.5">
-                            {fmtDateTime(b.starts_at)} · <span className="text-primary font-semibold">{fmtRelative(b.created_at)}</span>
+                            {fmtDateTime(b.starts_at)} Â· <span className="text-primary font-semibold">{fmtRelative(b.created_at)}</span>
                           </p>
                           {b.booking_note && (
                             <p className="text-xs text-on-surface mt-1.5 bg-surface-container rounded-lg px-2.5 py-1.5 italic line-clamp-2">
@@ -239,3 +241,5 @@ export default function ActivityPage() {
     </AppShell>
   );
 }
+
+

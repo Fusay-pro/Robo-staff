@@ -1,4 +1,6 @@
-'use client';
+﻿'use client';
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
@@ -11,13 +13,14 @@ import { useT } from '@/context/I18nContext';
 function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' });
 }
+
 function minutesUntil(iso: string) {
   return Math.round((new Date(iso).getTime() - Date.now()) / 60000);
 }
 
-// Dismissed notifications — keys map to expiry timestamp (24h TTL).
+// Dismissed notifications - keys map to expiry timestamp (24h TTL).
 const DISMISS_KEY = 'staff_dismissed_alerts_v1';
-const TTL_LIVE    = 24 * 60 * 60 * 1000;
+const TTL_LIVE = 24 * 60 * 60 * 1000;
 
 function loadDismissed(): Record<string, number> {
   if (typeof window === 'undefined') return {};
@@ -27,10 +30,15 @@ function loadDismissed(): Record<string, number> {
     const data = JSON.parse(raw) as Record<string, number>;
     const now = Date.now();
     const live: Record<string, number> = {};
-    for (const k in data) if (data[k] > now) live[k] = data[k];
+    for (const k in data) {
+      if (data[k] > now) live[k] = data[k];
+    }
     return live;
-  } catch { return {}; }
+  } catch {
+    return {};
+  }
 }
+
 function persistDismiss(key: string) {
   if (typeof window === 'undefined') return;
   const data = loadDismissed();
@@ -39,19 +47,30 @@ function persistDismiss(key: string) {
 }
 
 export default function NotificationBell() {
-  const { t } = useT();
+  const { t, locale } = useT();
   const [open, setOpen] = useState(false);
   const [dismissedTick, setDismissedTick] = useState(0);
-  const [dropPos, setDropPos] = useState({ top: 0, right: 0 });
+  const [dropPos, setDropPos] = useState({ top: 0, right: 0, isMobile: false });
   const router = useRouter();
   const { role } = useAuth();
   const isOwner = role === 'owner' || role === 'super_owner';
   const dropRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
 
+  function computeDropPos() {
+    if (!btnRef.current || typeof window === 'undefined') return;
+    const r = btnRef.current.getBoundingClientRect();
+    const isMobile = window.innerWidth < 640;
+    setDropPos({
+      top: r.bottom + 8,
+      right: Math.max(8, window.innerWidth - r.right),
+      isMobile,
+    });
+  }
+
   const { data } = useQuery<any>({
     queryKey: ['alerts-feed'],
-    queryFn: () => client.get('/schedules/alerts').then(r => r.data),
+    queryFn: () => client.get('/schedules/alerts').then((r) => r.data),
     refetchInterval: 60_000,
     staleTime: 30_000,
   });
@@ -63,25 +82,37 @@ export default function NotificationBell() {
       const insideDrop = dropRef.current?.contains(target);
       if (!insideBtn && !insideDrop) setOpen(false);
     }
-    if (open) document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    if (open) document.addEventListener('pointerdown', handler);
+    return () => document.removeEventListener('pointerdown', handler);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || typeof window === 'undefined') return;
+    computeDropPos();
+    window.addEventListener('resize', computeDropPos);
+    window.addEventListener('scroll', computeDropPos, true);
+    return () => {
+      window.removeEventListener('resize', computeDropPos);
+      window.removeEventListener('scroll', computeDropPos, true);
+    };
   }, [open]);
 
   const dismissed = useMemo(() => loadDismissed(), [dismissedTick]);
   const isDismissed = (key: string) => key in dismissed;
+
   function dismiss(key: string) {
     persistDismiss(key);
-    setDismissedTick(t => t + 1);
+    setDismissedTick((v) => v + 1);
   }
 
-  const nextRaw      = data?.next_session;
-  const next         = nextRaw && !isDismissed(`next-${nextRaw.schedule_id}`) ? nextRaw : null;
+  const nextRaw = data?.next_session;
+  const next = nextRaw && !isDismissed(`next-${nextRaw.schedule_id}`) ? nextRaw : null;
   const lowKidsRaw: any[] = data?.low_class_students ?? [];
-  const lowKids      = lowKidsRaw.filter(k => !isDismissed(`lowkid-${k.student_id}-${k.schedule_id}`));
+  const lowKids = lowKidsRaw.filter((k) => !isDismissed(`lowkid-${k.student_id}-${k.schedule_id}`));
   const pendingCount: number = data?.pending_approvals ?? 0;
-  const showPending  = isOwner && pendingCount > 0 && !isDismissed('pending-approvals');
-  const cancelCount: number  = data?.pending_cancellations ?? 0;
-  const showCancel   = isOwner && cancelCount > 0 && !isDismissed('pending-cancellations');
+  const showPending = isOwner && pendingCount > 0 && !isDismissed('pending-approvals');
+  const cancelCount: number = data?.pending_cancellations ?? 0;
+  const showCancel = isOwner && cancelCount > 0 && !isDismissed('pending-cancellations');
 
   const totalCount = (next ? 1 : 0) + lowKids.length + (showPending ? 1 : 0) + (showCancel ? 1 : 0);
 
@@ -90,11 +121,8 @@ export default function NotificationBell() {
       <button
         ref={btnRef}
         onClick={() => {
-          if (!open && btnRef.current) {
-            const r = btnRef.current.getBoundingClientRect();
-            setDropPos({ top: r.bottom + 8, right: window.innerWidth - r.right });
-          }
-          setOpen(v => !v);
+          if (!open) computeDropPos();
+          setOpen((v) => !v);
         }}
         className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors shrink-0"
       >
@@ -109,9 +137,13 @@ export default function NotificationBell() {
       </button>
 
       {open && typeof document !== 'undefined' && createPortal(
-        <div ref={dropRef} style={{ position: 'fixed', top: dropPos.top, right: dropPos.right, zIndex: 9999 }}
-          className="w-[340px] max-w-[calc(100vw-2rem)] bg-surface rounded-2xl shadow-2xl border border-outline-variant/30 overflow-hidden">
-          {/* Header */}
+        <div
+          ref={dropRef}
+          style={dropPos.isMobile
+            ? { position: 'fixed', top: dropPos.top, left: 0, right: 0, zIndex: 9999 }
+            : { position: 'fixed', top: dropPos.top, right: dropPos.right, zIndex: 9999 }}
+          className={`${dropPos.isMobile ? 'w-auto max-w-none rounded-xl' : 'w-[340px] max-w-[calc(100vw-2rem)] rounded-2xl'} bg-surface shadow-2xl border border-outline-variant/30 overflow-hidden`}
+        >
           <div className="px-5 py-4 border-b border-outline-variant/20 flex items-center justify-between">
             <h3 className="font-bold text-on-surface text-base">{t('bell.notifications')}</h3>
             {totalCount > 0 && (
@@ -119,21 +151,16 @@ export default function NotificationBell() {
             )}
           </div>
 
-          <div className="max-h-[420px] overflow-y-auto">
-
-            {/* Next session */}
+          <div className={`${dropPos.isMobile ? 'max-h-[calc(100dvh-7rem)]' : 'max-h-[420px]'} overflow-y-auto`}>
             {next && (
               <div className="group flex gap-3 px-5 py-3.5 hover:bg-surface-container-low transition-colors border-b border-outline-variant/15">
-                <button className="flex gap-3 flex-1 min-w-0 text-left"
-                  onClick={() => { setOpen(false); router.push(`/schedules/${next.schedule_id}`); }}>
+                <button className="flex gap-3 flex-1 min-w-0 text-left" onClick={() => { setOpen(false); router.push(`/schedules/${next.schedule_id}`); }}>
                   <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                     <span className="material-symbols-outlined text-primary text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>schedule</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-primary mb-0.5">{t('bell.upcomingSession')}</p>
-                    <p className="font-bold text-on-surface text-sm truncate">
-                      {next.course_name || next.contract_school_name || t('today.session')}
-                    </p>
+                    <p className="font-bold text-on-surface text-sm truncate">{next.course_name || next.contract_school_name || t('today.session')}</p>
                     <p className="text-xs text-on-surface-variant mt-0.5">
                       {(() => {
                         const m = minutesUntil(next.starts_at);
@@ -146,15 +173,12 @@ export default function NotificationBell() {
                     </p>
                   </div>
                 </button>
-                <button onClick={() => dismiss(`next-${next.schedule_id}`)}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-primary/10 text-on-surface-variant hover:text-primary opacity-50 group-hover:opacity-100 transition-all shrink-0 self-start"
-                  title={t('bell.dismiss')}>
+                <button onClick={() => dismiss(`next-${next.schedule_id}`)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-primary/10 text-on-surface-variant hover:text-primary opacity-50 group-hover:opacity-100 transition-all shrink-0 self-start" title={t('bell.dismiss')}>
                   <span className="material-symbols-outlined text-[14px]">close</span>
                 </button>
               </div>
             )}
 
-            {/* Low class students */}
             {lowKids.length > 0 && (
               <>
                 <div className="px-5 py-2 bg-orange-50 border-b border-orange-100">
@@ -164,36 +188,20 @@ export default function NotificationBell() {
                   </p>
                 </div>
                 {lowKids.map((k: any) => (
-                  <div key={`${k.student_id}-${k.schedule_id}`}
-                    className="group flex gap-3 px-5 py-3 hover:bg-surface-container-low transition-colors border-b border-outline-variant/15">
-                    <button className="flex gap-3 flex-1 min-w-0 text-left"
-                      onClick={() => { setOpen(false); router.push(`/schedules/${k.schedule_id}`); }}>
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                        k.classes_remaining === 0 ? 'bg-error/10' : 'bg-orange-100'
-                      }`}>
-                        <span className={`material-symbols-outlined text-[18px] ${
-                          k.classes_remaining === 0 ? 'text-error' : 'text-orange-600'
-                        }`} style={{ fontVariationSettings: "'FILL' 1" }}>
-                          notifications_active
-                        </span>
+                  <div key={`${k.student_id}-${k.schedule_id}`} className="group flex gap-3 px-5 py-3 hover:bg-surface-container-low transition-colors border-b border-outline-variant/15">
+                    <button className="flex gap-3 flex-1 min-w-0 text-left" onClick={() => { setOpen(false); router.push(`/schedules/${k.schedule_id}`); }}>
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${k.classes_remaining === 0 ? 'bg-error/10' : 'bg-orange-100'}`}>
+                        <span className={`material-symbols-outlined text-[18px] ${k.classes_remaining === 0 ? 'text-error' : 'text-orange-600'}`} style={{ fontVariationSettings: "'FILL' 1" }}>notifications_active</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-on-surface text-sm truncate">{k.student_name}</p>
-                        <p className="text-xs text-on-surface-variant mt-0.5 truncate">
-                          {k.session_name} · {fmtTime(k.starts_at)}
-                        </p>
-                        <p className={`text-[11px] font-bold mt-0.5 ${
-                          k.classes_remaining === 0 ? 'text-error' : 'text-orange-700'
-                        }`}>
-                          {k.classes_remaining === 0
-                            ? t('bell.outOfClassesShort')
-                            : t(k.classes_remaining !== 1 ? 'bell.onlyLeftClasses' : 'bell.onlyLeftClass', { n: k.classes_remaining })}
+                        <p className="text-xs text-on-surface-variant mt-0.5 truncate">{k.session_name} · {fmtTime(k.starts_at)}</p>
+                        <p className={`text-[11px] font-bold mt-0.5 ${k.classes_remaining === 0 ? 'text-error' : 'text-orange-700'}`}>
+                          {k.classes_remaining === 0 ? t('bell.outOfClassesShort') : t(k.classes_remaining !== 1 ? 'bell.onlyLeftClasses' : 'bell.onlyLeftClass', { n: k.classes_remaining })}
                         </p>
                       </div>
                     </button>
-                    <button onClick={() => dismiss(`lowkid-${k.student_id}-${k.schedule_id}`)}
-                      className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-orange-100 text-on-surface-variant hover:text-orange-700 opacity-50 group-hover:opacity-100 transition-all shrink-0 self-start"
-                      title={t('bell.dismiss')}>
+                    <button onClick={() => dismiss(`lowkid-${k.student_id}-${k.schedule_id}`)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-orange-100 text-on-surface-variant hover:text-orange-700 opacity-50 group-hover:opacity-100 transition-all shrink-0 self-start" title={t('bell.dismiss')}>
                       <span className="material-symbols-outlined text-[14px]">close</span>
                     </button>
                   </div>
@@ -201,53 +209,40 @@ export default function NotificationBell() {
               </>
             )}
 
-            {/* Pending approvals (owner) */}
             {showPending && (
               <div className="group flex gap-3 px-5 py-3.5 hover:bg-surface-container-low transition-colors border-b border-outline-variant/15">
-                <button className="flex gap-3 flex-1 min-w-0 text-left"
-                  onClick={() => { setOpen(false); router.push('/approvals'); }}>
+                <button className="flex gap-3 flex-1 min-w-0 text-left" onClick={() => { setOpen(false); router.push('/approvals'); }}>
                   <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
                     <span className="material-symbols-outlined text-blue-600 text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>fact_check</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600 mb-0.5">{t('bell.pendingApprovalsShort')}</p>
-                    <p className="font-bold text-on-surface text-sm">
-                      {t(pendingCount !== 1 ? 'bell.studentsWaiting' : 'bell.studentWaiting', { n: pendingCount })}
-                    </p>
+                    <p className="font-bold text-on-surface text-sm">{t(pendingCount !== 1 ? 'bell.studentsWaiting' : 'bell.studentWaiting', { n: pendingCount })}</p>
                   </div>
                 </button>
-                <button onClick={() => dismiss('pending-approvals')}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-blue-100 text-on-surface-variant hover:text-blue-600 opacity-50 group-hover:opacity-100 transition-all shrink-0 self-start"
-                  title={t('bell.dismiss')}>
+                <button onClick={() => dismiss('pending-approvals')} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-blue-100 text-on-surface-variant hover:text-blue-600 opacity-50 group-hover:opacity-100 transition-all shrink-0 self-start" title={t('bell.dismiss')}>
                   <span className="material-symbols-outlined text-[14px]">close</span>
                 </button>
               </div>
             )}
 
-            {/* Pending cancellation requests (owner) */}
             {showCancel && (
               <div className="group flex gap-3 px-5 py-3.5 hover:bg-surface-container-low transition-colors">
-                <button className="flex gap-3 flex-1 min-w-0 text-left"
-                  onClick={() => { setOpen(false); router.push('/approvals'); }}>
+                <button className="flex gap-3 flex-1 min-w-0 text-left" onClick={() => { setOpen(false); router.push('/approvals'); }}>
                   <div className="w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
                     <span className="material-symbols-outlined text-orange-600 text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>event_busy</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-orange-600 mb-0.5">{t('bell.parentRequests')}</p>
-                    <p className="font-bold text-on-surface text-sm">
-                      {t(cancelCount !== 1 ? 'bell.parentsWaiting' : 'bell.parentWaiting', { n: cancelCount })}
-                    </p>
+                    <p className="font-bold text-on-surface text-sm">{t(cancelCount !== 1 ? 'bell.parentsWaiting' : 'bell.parentWaiting', { n: cancelCount })}</p>
                   </div>
                 </button>
-                <button onClick={() => dismiss('pending-cancellations')}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-orange-100 text-on-surface-variant hover:text-orange-600 opacity-50 group-hover:opacity-100 transition-all shrink-0 self-start"
-                  title={t('bell.dismiss')}>
+                <button onClick={() => dismiss('pending-cancellations')} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-orange-100 text-on-surface-variant hover:text-orange-600 opacity-50 group-hover:opacity-100 transition-all shrink-0 self-start" title={t('bell.dismiss')}>
                   <span className="material-symbols-outlined text-[14px]">close</span>
                 </button>
               </div>
             )}
 
-            {/* Empty */}
             {totalCount === 0 && (
               <div className="px-5 py-10 text-center">
                 <span className="material-symbols-outlined text-5xl text-outline block mb-2">notifications_off</span>
@@ -257,8 +252,11 @@ export default function NotificationBell() {
             )}
           </div>
         </div>,
-        document.body
+        document.body,
       )}
     </div>
   );
 }
+
+
+

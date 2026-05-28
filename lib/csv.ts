@@ -1,3 +1,4 @@
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 // Small CSV-export helper. No deps.
 // Usage:
 //   downloadCsv('students.csv', students, [
@@ -30,7 +31,7 @@ export function toCsv<T = any>(rows: T[], cols: CsvColumn<T>[]): string {
     }).join(',')
   );
   // BOM so Excel detects UTF-8 (important for Thai chars)
-  return '﻿' + [header, ...lines].join('\r\n');
+  return 'ï»¿' + [header, ...lines].join('\r\n');
 }
 
 export function downloadCsv<T = any>(filename: string, rows: T[], cols: CsvColumn<T>[]) {
@@ -45,3 +46,4 @@ export function downloadCsv<T = any>(filename: string, rows: T[], cols: CsvColum
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+

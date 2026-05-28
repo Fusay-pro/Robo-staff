@@ -48,6 +48,7 @@ export default function NotificationBell() {
   const isOwner = role === 'owner' || role === 'super_owner';
   const dropRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
+  const autoOpenedRef = useRef(false);
 
   function computeDropPos() {
     if (!btnRef.current || typeof window === 'undefined') return;
@@ -112,6 +113,17 @@ export default function NotificationBell() {
     if (showPending) dismiss('pending-approvals');
     if (showCancel) dismiss('pending-cancellations');
   };
+
+  // Auto-open once per login/page load when alerts exist.
+  useEffect(() => {
+    if (typeof window === 'undefined' || autoOpenedRef.current || totalCount === 0) return;
+    const t = setTimeout(() => {
+      autoOpenedRef.current = true;
+      computeDropPos();
+      setOpen(true);
+    }, 500);
+    return () => clearTimeout(t);
+  }, [totalCount]);
 
   return (
     <div className="relative">

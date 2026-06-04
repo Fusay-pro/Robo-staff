@@ -61,7 +61,39 @@ export default function StudentDetailPage() {
   });
 
   const [deletePkgTarget, setDeletePkgTarget] = useState<any>(null);
+  const [editPkgTarget, setEditPkgTarget]     = useState<any>(null);
+  const [editPkgForm, setEditPkgForm]         = useState({ custom_name: '', custom_class_count: '' });
+  const [editPkgErr, setEditPkgErr]           = useState('');
   const [showInactive, setShowInactive]       = useState(false);
+
+  const editPkgMut = useMutation({
+    mutationFn: ({ cpId, body }: { cpId: number; body: any }) =>
+      client.patch(`/customer-packages/${cpId}`, body).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['student-packages', id] });
+      qc.invalidateQueries({ queryKey: ['student', id] });
+      setEditPkgTarget(null);
+    },
+    onError: (e: any) => setEditPkgErr(e?.response?.data?.error || t('students.failedEditPkg')),
+  });
+
+  function openEditPkg(p: any) {
+    setEditPkgForm({
+      custom_name:        p.custom_name ?? '',
+      custom_class_count: p.custom_class_count != null ? String(p.custom_class_count) : '',
+    });
+    setEditPkgErr('');
+    setEditPkgTarget(p);
+  }
+
+  function saveEditPkg() {
+    if (!editPkgTarget) return;
+    setEditPkgErr('');
+    const body: any = {};
+    body.custom_name         = editPkgForm.custom_name.trim() || null;
+    body.custom_class_count  = editPkgForm.custom_class_count ? parseInt(editPkgForm.custom_class_count) : null;
+    editPkgMut.mutate({ cpId: editPkgTarget.customer_package_id, body });
+  }
 
   // Edit Kid modal
   const [editKidOpen, setEditKidOpen] = useState(false);
@@ -348,12 +380,20 @@ export default function StudentDetailPage() {
                           </div>
                           {isOwner ? (
                             p.is_active ? (
-                              <button
-                                onClick={() => setDeletePkgTarget(p)}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-error/10 text-on-surface-variant hover:text-error transition-colors shrink-0"
-                                title={t('students.removeThis')}>
-                                <span className="material-symbols-outlined text-[16px]">delete</span>
-                              </button>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button
+                                  onClick={() => openEditPkg(p)}
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-primary/10 text-on-surface-variant hover:text-primary transition-colors"
+                                  title={t('students.editPkg')}>
+                                  <span className="material-symbols-outlined text-[16px]">edit</span>
+                                </button>
+                                <button
+                                  onClick={() => setDeletePkgTarget(p)}
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-error/10 text-on-surface-variant hover:text-error transition-colors"
+                                  title={t('students.removeThis')}>
+                                  <span className="material-symbols-outlined text-[16px]">delete</span>
+                                </button>
+                              </div>
                             ) : (
                               <button
                                 onClick={() => restorePkg.mutate(p.customer_package_id)}
@@ -515,6 +555,59 @@ export default function StudentDetailPage() {
               <button onClick={bulkAdd} disabled={pickedPkgs.size === 0 || bulkProgress !== null}
                 className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity">
                 {bulkProgress ? t('students.adding') : t(pickedPkgs.size === 1 ? 'students.addNPackage' : 'students.addNPackages', { n: pickedPkgs.size || '' })}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit package modal */}
+      {editPkgTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setEditPkgTarget(null)} />
+          <div className="relative bg-surface rounded-3xl p-6 w-full max-w-sm shadow-2xl z-10">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-lg font-bold text-on-surface">{t('students.editPkg')}</h3>
+              <button onClick={() => setEditPkgTarget(null)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container transition-colors">
+                <span className="material-symbols-outlined text-on-surface-variant">close</span>
+              </button>
+            </div>
+            <p className="text-xs text-on-surface-variant mb-5">{t('students.editPkgHint')}</p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">
+                  {t('manage.pkg.name')}
+                </label>
+                <input
+                  value={editPkgForm.custom_name}
+                  onChange={e => setEditPkgForm(f => ({ ...f, custom_name: e.target.value }))}
+                  placeholder={editPkgTarget.base_package_name ?? editPkgTarget.package_name}
+                  className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">
+                  {t('manage.pkg.classCount')}
+                </label>
+                <input
+                  type="number" min="1"
+                  value={editPkgForm.custom_class_count}
+                  onChange={e => setEditPkgForm(f => ({ ...f, custom_class_count: e.target.value }))}
+                  placeholder={String(editPkgTarget.class_count)}
+                  className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+              {editPkgErr && <p className="text-xs text-error bg-error-container/30 rounded-xl px-3 py-2">{editPkgErr}</p>}
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setEditPkgTarget(null)}
+                className="flex-1 py-2.5 rounded-xl border border-outline-variant text-sm font-semibold text-on-surface-variant hover:bg-surface-container transition-colors">
+                {t('common.cancel')}
+              </button>
+              <button onClick={saveEditPkg} disabled={editPkgMut.isPending}
+                className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity">
+                {editPkgMut.isPending ? t('common.saving') : t('students.saveChanges')}
               </button>
             </div>
           </div>

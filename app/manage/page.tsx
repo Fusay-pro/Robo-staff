@@ -2,6 +2,8 @@
 import AppShell from '@/components/AppShell';
 import { useState, useEffect, useRef } from 'react';
 import { useT } from '@/context/I18nContext';
+import DataSyncPanel from '@/components/DataSyncPanel';
+import { useAuth } from '@/context/AuthContext';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 function resolveImg(u: string) {
@@ -1159,6 +1161,8 @@ function StaffCard({ user, onEdit, onDelete }: { user: StaffUser; onEdit: (u: St
 // Settings Tab — Robot Types & Course Levels
 // ────────────────────────────────────────────────────────────────────────────
 function SettingsTab() {
+  const { role } = useAuth();
+  const isOwner  = role === 'owner' || role === 'super_owner';
   const qc = useQueryClient();
   const { data: robotTypes = [] } = useQuery<RobotType[]>({ queryKey: ['robot-types'],   queryFn: () => client.get('/robot-types').then(r => r.data) });
   const { data: levels     = [] } = useQuery<Level[]>    ({ queryKey: ['course-levels'], queryFn: () => client.get('/course-levels').then(r => r.data) });
@@ -1525,6 +1529,8 @@ function SettingsTab() {
           </div>
         </div>
       )}
+
+      {isOwner && <DataSyncPanel />}
     </>
   );
 }

@@ -35,13 +35,6 @@ export default function StudentDetailPage() {
     enabled: !!id,
   });
 
-  // Catalog of all packages owners can sell (for bulk-add)
-  const { data: catalog = [] } = useQuery<any[]>({
-    queryKey: ['packages-catalog'],
-    queryFn: () => client.get('/packages').then(r => r.data),
-    enabled: isOwner,
-  });
-
   const archivePkg = useMutation({
     mutationFn: (cpId: number) =>
       client.patch(`/customer-packages/${cpId}`, { is_active: false }),
@@ -146,44 +139,41 @@ export default function StudentDetailPage() {
     });
   }
 
-  // Bulk-add packages modal
+  // Assign course modal
   const [addPkgOpen, setAddPkgOpen] = useState(false);
-  const [pickedPkgs, setPickedPkgs] = useState<Set<number>>(new Set());
-  const [bulkErr, setBulkErr]       = useState('');
-  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
+  const [addPkgForm, setAddPkgForm] = useState({ course_id: '', class_count: '', price: '', name: '' });
+  const [addPkgErr, setAddPkgErr]   = useState('');
 
-  function togglePick(pkgId: number) {
-    setPickedPkgs(prev => {
-      const next = new Set(prev);
-      if (next.has(pkgId)) next.delete(pkgId); else next.add(pkgId);
-      return next;
-    });
-  }
+  const { data: coursesList = [] } = useQuery<any[]>({
+    queryKey: ['courses'],
+    queryFn:  () => client.get('/courses').then(r => r.data),
+    enabled:  isOwner && addPkgOpen,
+  });
 
-  async function bulkAdd() {
-    if (pickedPkgs.size === 0) return;
-    setBulkErr('');
-    const ids = [...pickedPkgs];
-    setBulkProgress({ done: 0, total: ids.length });
-    const failures: string[] = [];
-    for (let i = 0; i < ids.length; i++) {
-      try {
-        await client.post('/customer-packages', { student_id: parseInt(id), package_id: ids[i] });
-      } catch (e: any) {
-        failures.push(e?.response?.data?.error || 'failed');
-      }
-      setBulkProgress({ done: i + 1, total: ids.length });
-    }
-    qc.invalidateQueries({ queryKey: ['student-packages', id] });
-    qc.invalidateQueries({ queryKey: ['student', id] });
-    if (failures.length) {
-      setBulkErr(`${failures.length} of ${ids.length} failed: ${failures[0]}`);
-      setBulkProgress(null);
-    } else {
+  const assignCourseMut = useMutation({
+    mutationFn: (body: any) => client.post('/customer-packages', body).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['student-packages', id] });
+      qc.invalidateQueries({ queryKey: ['student', id] });
       setAddPkgOpen(false);
-      setPickedPkgs(new Set());
-      setBulkProgress(null);
-    }
+      setAddPkgForm({ course_id: '', class_count: '', price: '', name: '' });
+      setAddPkgErr('');
+    },
+    onError: (e: any) => setAddPkgErr(e?.response?.data?.error || t('students.failedSave')),
+  });
+
+  function submitAssignCourse() {
+    setAddPkgErr('');
+    if (!addPkgForm.course_id) { setAddPkgErr('Please select a course'); return; }
+    if (!addPkgForm.class_count || parseInt(addPkgForm.class_count) < 1) { setAddPkgErr('Please enter number of classes'); return; }
+    if (addPkgForm.price === '') { setAddPkgErr('Please enter a price'); return; }
+    assignCourseMut.mutate({
+      student_id:  parseInt(id),
+      course_id:   parseInt(addPkgForm.course_id),
+      class_count: parseInt(addPkgForm.class_count),
+      price:       parseFloat(addPkgForm.price),
+      name:        addPkgForm.name.trim() || undefined,
+    });
   }
 
   const { data: notes = [] } = useQuery<any[]>({
@@ -338,7 +328,7 @@ export default function StudentDetailPage() {
                   {t('students.packages')}
                 </h2>
                 {isOwner && (
-                  <button onClick={() => { setPickedPkgs(new Set()); setBulkErr(''); setBulkProgress(null); setAddPkgOpen(true); }}
+                  <button onClick={() => { setAddPkgForm({ course_id: '', class_count: '', price: '', name: '' }); setAddPkgErr(''); setAddPkgOpen(true); }}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white text-xs font-bold rounded-lg hover:opacity-90 transition-opacity">
                     <span className="material-symbols-outlined text-[14px]">add</span> {t('common.add')}
                   </button>
@@ -491,70 +481,66 @@ export default function StudentDetailPage() {
         </div>
       </div>
 
-      {/* Bulk-add packages modal */}
+      {/* Assign course modal */}
       {addPkgOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setAddPkgOpen(false)} />
-          <div className="relative bg-surface rounded-3xl shadow-2xl z-10 w-full max-w-md flex flex-col overflow-hidden" style={{ maxHeight: '90vh' }}>
-            <div className="px-6 pt-5 pb-3 border-b border-outline-variant/20">
-              <div className="flex items-start justify-between gap-3">
+          <div className="relative bg-surface rounded-3xl shadow-2xl z-10 w-full max-w-sm">
+            <div className="px-6 pt-5 pb-3 border-b border-outline-variant/20 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-on-surface">{t('students.assignCourse')}</h3>
+                <p className="text-xs text-on-surface-variant mt-0.5">{t('students.assignCourseHint')}</p>
+              </div>
+              <button onClick={() => setAddPkgOpen(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container transition-colors shrink-0">
+                <span className="material-symbols-outlined text-on-surface-variant">close</span>
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">{t('schedule.course')} *</label>
+                <select value={addPkgForm.course_id}
+                  onChange={e => setAddPkgForm(f => ({ ...f, course_id: e.target.value }))}
+                  className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <option value="">— select —</option>
+                  {coursesList.map((c: any) => <option key={c.course_id} value={c.course_id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <h3 className="text-lg font-bold text-on-surface">{t('students.addPackages')}</h3>
-                  <p className="text-xs text-on-surface-variant mt-0.5">{t('students.addPackagesHint', { name: student.name })}</p>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">{t('manage.pkg.classCount')} *</label>
+                  <input type="number" min="1" value={addPkgForm.class_count}
+                    onChange={e => setAddPkgForm(f => ({ ...f, class_count: e.target.value }))}
+                    className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
                 </div>
-                <button onClick={() => setAddPkgOpen(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container transition-colors shrink-0">
-                  <span className="material-symbols-outlined text-on-surface-variant">close</span>
-                </button>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">{t('manage.pkg.price')} *</label>
+                  <input type="number" min="0" value={addPkgForm.price}
+                    onChange={e => setAddPkgForm(f => ({ ...f, price: e.target.value }))}
+                    className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                </div>
               </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">
+                  {t('manage.pkg.name')} <span className="text-on-surface-variant font-normal normal-case tracking-normal">({t('common.optional')})</span>
+                </label>
+                <input value={addPkgForm.name}
+                  onChange={e => setAddPkgForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder={coursesList.find((c: any) => String(c.course_id) === addPkgForm.course_id)?.name || ''}
+                  className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              </div>
+              {addPkgErr && <p className="text-xs text-error bg-error-container/30 rounded-xl px-3 py-2">{addPkgErr}</p>}
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2">
-              {catalog.length === 0 ? (
-                <p className="text-sm text-on-surface-variant italic py-8 text-center">{t('students.noCatalog')}</p>
-              ) : catalog.map((p: any) => {
-                const picked = pickedPkgs.has(p.package_id);
-                return (
-                  <button key={p.package_id} onClick={() => togglePick(p.package_id)}
-                    className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-2xl border transition-colors ${
-                      picked ? 'bg-primary/10 border-primary' : 'bg-surface-container-low border-outline-variant/30 hover:border-primary/40'
-                    }`}>
-                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 ${
-                      picked ? 'bg-primary border-primary' : 'border-outline-variant'
-                    }`}>
-                      {picked && <span className="material-symbols-outlined text-white text-[14px]">check</span>}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-on-surface text-sm">{p.name}</p>
-                      <p className="text-[11px] text-on-surface-variant truncate">
-                        {p.course_name || t('manage.tabs.courses')} · {p.class_count} {t('students.classesText')}
-                      </p>
-                    </div>
-                    {p.price != null && (
-                      <span className="text-xs font-bold text-primary shrink-0">฿{p.price?.toLocaleString?.()}</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {(bulkErr || bulkProgress) && (
-              <div className="px-6 pb-3">
-                {bulkErr && <p className="text-xs text-error bg-error-container/30 rounded-xl px-3 py-2">{bulkErr}</p>}
-                {bulkProgress && (
-                  <p className="text-xs text-primary text-center font-semibold">{t('students.addingProgress', { done: bulkProgress.done, total: bulkProgress.total })}</p>
-                )}
-              </div>
-            )}
-
-            <div className="px-6 py-4 border-t border-outline-variant/20 flex gap-3 bg-surface">
+            <div className="px-6 pb-5 flex gap-3">
               <button onClick={() => setAddPkgOpen(false)}
                 className="flex-1 py-2.5 rounded-xl border border-outline-variant text-sm font-semibold text-on-surface-variant hover:bg-surface-container transition-colors">
                 {t('common.cancel')}
               </button>
-              <button onClick={bulkAdd} disabled={pickedPkgs.size === 0 || bulkProgress !== null}
+              <button onClick={submitAssignCourse} disabled={assignCourseMut.isPending}
                 className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity">
-                {bulkProgress ? t('students.adding') : t(pickedPkgs.size === 1 ? 'students.addNPackage' : 'students.addNPackages', { n: pickedPkgs.size || '' })}
+                {assignCourseMut.isPending ? t('students.creating') : t('common.add')}
               </button>
             </div>
           </div>

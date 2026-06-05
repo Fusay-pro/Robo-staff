@@ -30,14 +30,12 @@ type Announcement = { announcement_id: number; title: string; body?: string; ima
 // ────────────────────────────────────────────────────────────────────────────
 function CoursesTab() {
   const qc = useQueryClient();
-  const [expanded, setExpanded] = useState<number | null>(null);
-  const [modal, setModal]   = useState<null | { type: 'course' | 'package'; editing?: any; courseId?: number }>(null);
-  const [form, setForm]     = useState<Record<string, any>>({});
-  const [formErr, setFormErr] = useState('');
-  const [delConfirm, setDelConfirm] = useState<null | { type: 'course' | 'package'; id: number }>(null);
+  const [modal, setModal]       = useState<null | { editing?: Course }>(null);
+  const [form, setForm]         = useState<Record<string, any>>({});
+  const [formErr, setFormErr]   = useState('');
+  const [delTarget, setDelTarget] = useState<Course | null>(null);
 
   const { data: courses    = [] } = useQuery<Course[]>   ({ queryKey: ['courses'],       queryFn: () => client.get('/courses').then(r => r.data) });
-  const { data: packages   = [] } = useQuery<Pkg[]>      ({ queryKey: ['packages'],      queryFn: () => client.get('/packages').then(r => r.data) });
   const { data: robotTypes = [] } = useQuery<RobotType[]>({ queryKey: ['robot-types'],   queryFn: () => client.get('/robot-types').then(r => r.data) });
   const { data: levels     = [] } = useQuery<Level[]>    ({ queryKey: ['course-levels'], queryFn: () => client.get('/course-levels').then(r => r.data) });
 
@@ -46,33 +44,19 @@ function CoursesTab() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['courses'] }); setModal(null); },
     onError:   (e: any) => setFormErr(e.response?.data?.error || 'Failed'),
   });
-  const pkgMut = useMutation({
-    mutationFn: (d: any) => d.package_id ? client.patch(`/packages/${d.package_id}`, d) : client.post('/packages', d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['packages'] }); setModal(null); },
-    onError:   (e: any) => setFormErr(e.response?.data?.error || 'Failed'),
-  });
-  const delCourseMut = useMutation({
+  const delMut = useMutation({
     mutationFn: (id: number) => client.delete(`/courses/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['courses'] }); setDelConfirm(null); },
-  });
-  const delPkgMut = useMutation({
-    mutationFn: (id: number) => client.delete(`/packages/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['packages'] }); setDelConfirm(null); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['courses'] }); setDelTarget(null); },
   });
 
-  function openCourse(c?: Course) { setFormErr(''); setForm(c ?? {}); setModal({ type: 'course', editing: c }); }
-  function openPkg(courseId: number, p?: Pkg) { setFormErr(''); setForm(p ? { ...p } : { course_id: courseId }); setModal({ type: 'package', editing: p, courseId }); }
+  function openCourse(c?: Course) {
+    setFormErr(''); setForm(c ?? {}); setModal({ editing: c });
+  }
 
   function save() {
     setFormErr('');
-    if (modal?.type === 'course') {
-      courseMut.mutate({ ...form, level_id: form.level_id ? +form.level_id : undefined, robot_type_id: form.robot_type_id ? +form.robot_type_id : undefined });
-    } else {
-      pkgMut.mutate({ ...form, class_count: +form.class_count, price: +form.price, course_id: +form.course_id });
-    }
+    courseMut.mutate({ ...form, level_id: form.level_id ? +form.level_id : undefined, robot_type_id: form.robot_type_id ? +form.robot_type_id : undefined });
   }
-
-  const saving = courseMut.isPending || pkgMut.isPending;
 
   return (
     <>
@@ -91,148 +75,77 @@ function CoursesTab() {
         </div>
       ) : (
         <div className="space-y-3">
-          {courses.map(c => {
-            const pkgs   = packages.filter(p => p.course_id === c.course_id);
-            const isOpen = expanded === c.course_id;
-            return (
-              <div key={c.course_id} className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm border border-outline-variant/30">
-                <div className="flex items-center gap-3 px-4 py-3.5">
-                  <button onClick={() => setExpanded(isOpen ? null : c.course_id)}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container transition-colors shrink-0">
-                    <span className="material-symbols-outlined text-[18px] text-on-surface-variant transition-transform duration-200"
-                      style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>chevron_right</span>
-                  </button>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-on-surface text-sm">{c.name}</p>
-                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      {c.robot_type_name && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">{c.robot_type_name}</span>}
-                      {c.level_name      && <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary/10 text-secondary font-semibold">{c.level_name}</span>}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={() => openCourse(c)}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors">
-                      <span className="material-symbols-outlined text-[15px]">edit</span>
-                    </button>
-                    <button onClick={() => setDelConfirm({ type: 'course', id: c.course_id })}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-error/10 text-error transition-colors">
-                      <span className="material-symbols-outlined text-[15px]">delete</span>
-                    </button>
-                  </div>
+          {courses.map(c => (
+            <div key={c.course_id} className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 flex items-center gap-3 px-4 py-3.5">
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-on-surface text-sm">{c.name}</p>
+                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                  {c.robot_type_name && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">{c.robot_type_name}</span>}
+                  {c.level_name      && <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary/10 text-secondary font-semibold">{c.level_name}</span>}
                 </div>
-
-                {isOpen && (
-                  <div className="border-t border-outline-variant/10 px-4 py-3 bg-surface-container/20 space-y-2">
-                    {pkgs.length === 0 && (
-                      <p className="text-xs text-on-surface-variant text-center py-2">No packages — add one below</p>
-                    )}
-                    {pkgs.map(p => (
-                      <div key={p.package_id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-surface-container-lowest shadow-sm border border-outline-variant/30">
-                        <div className="w-7 h-7 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
-                          <span className="material-symbols-outlined text-[14px]">package_2</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-on-surface">{p.name}</p>
-                          <p className="text-xs text-on-surface-variant">{p.class_count} classes · ฿{Number(p.price).toLocaleString()}</p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => openPkg(c.course_id, p)}
-                            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors">
-                            <span className="material-symbols-outlined text-[13px]">edit</span>
-                          </button>
-                          <button onClick={() => setDelConfirm({ type: 'package', id: p.package_id })}
-                            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-error/10 text-error transition-colors">
-                            <span className="material-symbols-outlined text-[13px]">delete</span>
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                    <button onClick={() => openPkg(c.course_id)}
-                      className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-bold text-primary hover:bg-primary/5 rounded-xl transition-colors">
-                      <span className="material-symbols-outlined text-[13px]">add</span> Add Package
-                    </button>
-                  </div>
-                )}
               </div>
-            );
-          })}
+              <div className="flex items-center gap-1 shrink-0">
+                <button onClick={() => openCourse(c)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors">
+                  <span className="material-symbols-outlined text-[15px]">edit</span>
+                </button>
+                <button onClick={() => setDelTarget(c)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-error/10 text-error transition-colors">
+                  <span className="material-symbols-outlined text-[15px]">delete</span>
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Course / Package modal */}
+      {/* Course modal */}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setModal(null)} />
           <div className="relative bg-background rounded-3xl p-6 w-full max-w-md shadow-2xl z-10">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="font-bold text-on-surface text-lg">
-                {modal.editing ? 'Edit' : 'New'} {modal.type === 'course' ? 'Course' : 'Package'}
-              </h3>
+              <h3 className="font-bold text-on-surface text-lg">{modal.editing ? 'Edit' : 'New'} Course</h3>
               <button onClick={() => setModal(null)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container transition-colors">
                 <span className="material-symbols-outlined text-on-surface-variant">close</span>
               </button>
             </div>
-
-            {modal.type === 'course' ? (
-              <div className="space-y-4">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">Course Name *</label>
+                <input value={form.name || ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">Description</label>
+                <textarea rows={2} value={form.description || ''} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                  className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">Course Name *</label>
-                  <input value={form.name || ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                    className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">Robot Type</label>
+                  <select value={form.robot_type_id || ''} onChange={e => setForm(f => ({ ...f, robot_type_id: e.target.value }))}
+                    className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                    <option value="">None</option>
+                    {robotTypes.map(rt => <option key={rt.robot_type_id} value={rt.robot_type_id}>{rt.name}</option>)}
+                  </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">Description</label>
-                  <textarea rows={2} value={form.description || ''} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                    className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">Robot Type</label>
-                    <select value={form.robot_type_id || ''} onChange={e => setForm(f => ({ ...f, robot_type_id: e.target.value }))}
-                      className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-                      <option value="">None</option>
-                      {robotTypes.map(rt => <option key={rt.robot_type_id} value={rt.robot_type_id}>{rt.name}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">Level</label>
-                    <select value={form.level_id || ''} onChange={e => setForm(f => ({ ...f, level_id: e.target.value }))}
-                      className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-                      <option value="">None</option>
-                      {levels.map(l => <option key={l.level_id} value={l.level_id}>{l.name}</option>)}
-                    </select>
-                  </div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">Level</label>
+                  <select value={form.level_id || ''} onChange={e => setForm(f => ({ ...f, level_id: e.target.value }))}
+                    className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                    <option value="">None</option>
+                    {levels.map(l => <option key={l.level_id} value={l.level_id}>{l.name}</option>)}
+                  </select>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">Package Name *</label>
-                  <input value={form.name || ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                    placeholder="e.g. 10-Class Pack"
-                    className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">Classes *</label>
-                    <input type="number" min="1" value={form.class_count || ''} onChange={e => setForm(f => ({ ...f, class_count: e.target.value }))}
-                      className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">Price (฿) *</label>
-                    <input type="number" min="0" value={form.price || ''} onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
-                      className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                  </div>
-                </div>
-              </div>
-            )}
-
+            </div>
             {formErr && <p className="text-xs text-error bg-error-container/30 rounded-xl px-3 py-2 mt-4">{formErr}</p>}
             <div className="flex gap-3 mt-6">
               <button onClick={() => setModal(null)} className="flex-1 py-2.5 rounded-xl border border-outline-variant text-sm font-semibold text-on-surface-variant hover:bg-surface-container transition-colors">Cancel</button>
-              <button onClick={save} disabled={saving}
+              <button onClick={save} disabled={courseMut.isPending}
                 className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity">
-                {saving ? 'Saving…' : 'Save'}
+                {courseMut.isPending ? 'Saving…' : 'Save'}
               </button>
             </div>
           </div>
@@ -240,18 +153,16 @@ function CoursesTab() {
       )}
 
       {/* Delete confirmation */}
-      {delConfirm && (
+      {delTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDelConfirm(null)} />
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDelTarget(null)} />
           <div className="relative bg-background rounded-3xl p-6 w-full max-w-sm shadow-2xl z-10 text-center">
             <span className="material-symbols-outlined text-3xl text-error mb-2 block">warning</span>
-            <h3 className="font-bold text-on-surface mb-1">Delete {delConfirm.type}?</h3>
-            <p className="text-sm text-on-surface-variant mb-5">This action cannot be undone.</p>
+            <h3 className="font-bold text-on-surface mb-1">Delete course?</h3>
+            <p className="text-sm text-on-surface-variant mb-5">{delTarget.name} — this cannot be undone.</p>
             <div className="flex gap-3">
-              <button onClick={() => setDelConfirm(null)} className="flex-1 py-2.5 rounded-xl border border-outline-variant text-sm font-semibold hover:bg-surface-container transition-colors">Cancel</button>
-              <button
-                onClick={() => delConfirm.type === 'course' ? delCourseMut.mutate(delConfirm.id) : delPkgMut.mutate(delConfirm.id)}
-                disabled={delCourseMut.isPending || delPkgMut.isPending}
+              <button onClick={() => setDelTarget(null)} className="flex-1 py-2.5 rounded-xl border border-outline-variant text-sm font-semibold hover:bg-surface-container transition-colors">Cancel</button>
+              <button onClick={() => delMut.mutate(delTarget.course_id)} disabled={delMut.isPending}
                 className="flex-1 py-2.5 rounded-xl bg-error text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity">
                 Delete
               </button>
@@ -281,9 +192,10 @@ function EnrollTab() {
   const [enrollErr,  setEnrollErr]  = useState('');
   const [success,    setSuccess]    = useState(false);
   const [buyModal,   setBuyModal]   = useState(false);
-  const [buyPkgId,   setBuyPkgId]   = useState('');
+  const [buyForm,    setBuyForm]    = useState({ course_id: '', class_count: '', price: '', name: '' });
+  const [buyErr,     setBuyErr]     = useState('');
 
-  const { data: catalog = [] } = useQuery<Pkg[]>({ queryKey: ['packages'], queryFn: () => client.get('/packages').then(r => r.data) });
+  const { data: allCourses = [] } = useQuery<Course[]>({ queryKey: ['courses'], queryFn: () => client.get('/courses').then(r => r.data), enabled: buyModal });
 
   useEffect(() => {
     const t = setTimeout(() => setDebSearch(search), 350);
@@ -312,7 +224,15 @@ function EnrollTab() {
 
   const buyMut = useMutation({
     mutationFn: (d: any) => client.post('/customer-packages', d).then(r => r.data),
-    onSuccess:  () => { qc.invalidateQueries({ queryKey: ['customer-packages', selStudent?.student_id] }); setBuyModal(false); setBuyPkgId(''); },
+    onSuccess:  (cp) => {
+      qc.invalidateQueries({ queryKey: ['customer-packages', selStudent?.student_id] });
+      setBuyModal(false);
+      setBuyForm({ course_id: '', class_count: '', price: '', name: '' });
+      setBuyErr('');
+      setSelPkg({ ...cp, course_name: allCourses.find(c => c.course_id === parseInt(buyForm.course_id))?.name ?? '', package_name: buyForm.name || '', class_count: parseInt(buyForm.class_count), classes_remaining: parseInt(buyForm.class_count) });
+      setStep(3);
+    },
+    onError: (e: any) => setBuyErr(e?.response?.data?.error || 'Failed'),
   });
 
   const enrollMut = useMutation({
@@ -324,6 +244,7 @@ function EnrollTab() {
   function reset() {
     setStep(1); setSelStudent(null); setSelPkg(null); setSelSession(null);
     setSearch(''); setDebSearch(''); setEnrollErr(''); setSuccess(false);
+    setBuyForm({ course_id: '', class_count: '', price: '', name: '' }); setBuyErr('');
   }
 
   if (success) return (
@@ -527,35 +448,60 @@ function EnrollTab() {
         </>
       )}
 
-      {/* Assign new package modal */}
+      {/* Assign course modal */}
       {buyModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setBuyModal(false)} />
-          <div className="relative bg-background rounded-3xl p-6 w-full max-w-md shadow-2xl z-10">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-on-surface text-lg">Assign Package</h3>
+          <div className="relative bg-background rounded-3xl p-6 w-full max-w-sm shadow-2xl z-10">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-bold text-on-surface text-lg">{t('students.assignCourse')}</h3>
               <button onClick={() => setBuyModal(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container transition-colors">
                 <span className="material-symbols-outlined text-on-surface-variant">close</span>
               </button>
             </div>
-            <p className="text-sm text-on-surface-variant mb-4">Assigning to: <strong className="text-on-surface">{selStudent?.name}</strong></p>
-            <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">Select Package</label>
-            <select value={buyPkgId} onChange={e => setBuyPkgId(e.target.value)}
-              className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-              <option value="">Choose…</option>
-              {catalog.map(p => (
-                <option key={p.package_id} value={p.package_id}>
-                  {p.course_name} — {p.name} ({p.class_count} classes · ฿{Number(p.price).toLocaleString()})
-                </option>
-              ))}
-            </select>
+            <p className="text-sm text-on-surface-variant mb-4">{selStudent?.name}</p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">{t('schedule.course')} *</label>
+                <select value={buyForm.course_id} onChange={e => setBuyForm(f => ({ ...f, course_id: e.target.value }))}
+                  className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <option value="">— select —</option>
+                  {allCourses.map(c => <option key={c.course_id} value={c.course_id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">{t('manage.pkg.classCount')} *</label>
+                  <input type="number" min="1" value={buyForm.class_count} onChange={e => setBuyForm(f => ({ ...f, class_count: e.target.value }))}
+                    className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">{t('manage.pkg.price')} *</label>
+                  <input type="number" min="0" value={buyForm.price} onChange={e => setBuyForm(f => ({ ...f, price: e.target.value }))}
+                    className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">
+                  {t('manage.pkg.name')} <span className="text-on-surface-variant font-normal normal-case tracking-normal">({t('common.optional')})</span>
+                </label>
+                <input value={buyForm.name} onChange={e => setBuyForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder={allCourses.find(c => String(c.course_id) === buyForm.course_id)?.name || ''}
+                  className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              </div>
+              {buyErr && <p className="text-xs text-error bg-error-container/30 rounded-xl px-3 py-2">{buyErr}</p>}
+            </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setBuyModal(false)} className="flex-1 py-2.5 rounded-xl border border-outline-variant text-sm font-semibold hover:bg-surface-container transition-colors">Cancel</button>
+              <button onClick={() => setBuyModal(false)} className="flex-1 py-2.5 rounded-xl border border-outline-variant text-sm font-semibold hover:bg-surface-container transition-colors">{t('common.cancel')}</button>
               <button
-                onClick={() => buyPkgId && buyMut.mutate({ student_id: selStudent!.student_id, package_id: +buyPkgId })}
-                disabled={!buyPkgId || buyMut.isPending}
+                onClick={() => {
+                  if (!buyForm.course_id || !buyForm.class_count || buyForm.price === '') { setBuyErr('Please fill all required fields'); return; }
+                  setBuyErr('');
+                  buyMut.mutate({ student_id: selStudent!.student_id, course_id: parseInt(buyForm.course_id), class_count: parseInt(buyForm.class_count), price: parseFloat(buyForm.price), name: buyForm.name.trim() || undefined });
+                }}
+                disabled={buyMut.isPending}
                 className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity">
-                {buyMut.isPending ? 'Assigning…' : 'Assign'}
+                {buyMut.isPending ? t('students.creating') : t('common.add')}
               </button>
             </div>
           </div>

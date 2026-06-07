@@ -38,11 +38,11 @@ export default function ApprovalsPage() {
   const loading = tab === 'pending' ? loadPending : tab === 'reviewed' ? loadReviewed : loadCancel;
 
   const approve = useMutation({
-    mutationFn: (id: number) => client.patch(`/students/${id}`, { approval_status: 'approved' }),
+    mutationFn: (id: number) => client.patch(`/confirmations/${id}`, { status: 'approved' }),
     onSuccess:  () => { qc.invalidateQueries({ queryKey: ['approvals'] }); },
   });
   const reject = useMutation({
-    mutationFn: (id: number) => client.patch(`/students/${id}`, { approval_status: 'rejected' }),
+    mutationFn: (id: number) => client.patch(`/confirmations/${id}`, { status: 'rejected' }),
     onSuccess:  () => { qc.invalidateQueries({ queryKey: ['approvals'] }); },
   });
 

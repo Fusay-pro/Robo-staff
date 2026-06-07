@@ -692,6 +692,14 @@ export const messages = {
     'sync.passwordLabel':     'Your password',
     'sync.passwordHint':      'Enter your login password to confirm this import.',
     'sync.importError':       'Import failed',
+    'sync.sheetLinks':        'Google Sheet Links',
+    'sync.operationalSheet':  'Operational sheet',
+    'sync.financeSheet':      'Finance sheet',
+    'sync.notSet':            'Not configured',
+    'sync.editSheets':        'Edit Sheet Links',
+    'sync.editSheetsHint':    'Paste the full Google Sheets URL or just the spreadsheet ID.',
+    'sync.confirmPassword':   'Confirm with password',
+    'sync.saveError':         'Failed to save',
 
     // Dates
     'date.days.sun':         'Sun',
@@ -1430,6 +1438,14 @@ export const messages = {
     'sync.passwordLabel':     'รหัสผ่านของคุณ',
     'sync.passwordHint':      'กรอกรหัสผ่านเพื่อยืนยันการนำเข้า',
     'sync.importError':       'นำเข้าไม่สำเร็จ',
+    'sync.sheetLinks':        'ลิงก์ Google Sheets',
+    'sync.operationalSheet':  'ชีทปฏิบัติการ',
+    'sync.financeSheet':      'ชีทการเงิน',
+    'sync.notSet':            'ยังไม่ได้ตั้งค่า',
+    'sync.editSheets':        'แก้ไขลิงก์ Sheets',
+    'sync.editSheetsHint':    'วาง URL เต็มของ Google Sheets หรือแค่ spreadsheet ID',
+    'sync.confirmPassword':   'ยืนยันด้วยรหัสผ่าน',
+    'sync.saveError':         'บันทึกไม่สำเร็จ',
 
     // Dates
     'date.days.sun':         'อา',

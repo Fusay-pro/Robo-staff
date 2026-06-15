@@ -7,6 +7,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import client from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import AddStudentModal from './_components/AddStudentModal';
 
 function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' });
@@ -38,6 +39,7 @@ export default function ScheduleDetailPage() {
   const [sessionForm, setSessionForm] = useState({ date: '', start_time: '', end_time: '', max_capacity: '' });
   const [sessionError, setSessionError] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [addOpen, setAddOpen] = useState(false);
 
   const { data: session, isLoading: sessionLoading } = useQuery<any>({
     queryKey: ['schedule', id],
@@ -238,9 +240,18 @@ export default function ScheduleDetailPage() {
             <div className="bg-surface-container-lowest rounded-3xl overflow-hidden shadow-sm">
               <div className="px-6 py-4 border-b border-outline-variant/20 flex items-center justify-between">
                 <h3 className="font-bold text-on-surface text-lg">Student Roster</h3>
-                <span className="text-xs font-bold px-3 py-1 rounded-full bg-primary/10 text-primary">
-                  {enrollments.length} enrolled
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-primary/10 text-primary">
+                    {enrollments.length} enrolled
+                  </span>
+                  {isOwner && (
+                    <button onClick={() => setAddOpen(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 transition-opacity">
+                      <span className="material-symbols-outlined text-[16px]">person_add</span>
+                      Add Student
+                    </button>
+                  )}
+                </div>
               </div>
 
               {rosterLoading ? (
@@ -313,6 +324,15 @@ export default function ScheduleDetailPage() {
           </>
         )}
       </div>
+
+      {/* Add student to session (owner) */}
+      {addOpen && (
+        <AddStudentModal
+          scheduleId={id}
+          sessionFull={session?.max_capacity > 0 && session.enrolled_count >= session.max_capacity}
+          onClose={() => setAddOpen(false)}
+        />
+      )}
 
       {/* Remove student confirm */}
       {deleteTarget && (

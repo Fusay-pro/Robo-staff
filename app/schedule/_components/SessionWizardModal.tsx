@@ -146,7 +146,7 @@ export default function SessionWizardModal({ onClose, isOwner }: Props) {
   }, []);
 
   const createMut = useMutation({
-    mutationFn: (body: any) => client.post('/schedules', body).then(r => r.data),
+    mutationFn: (body: any) => client.post('/schedules/bulk', body).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['schedules-list'] });
       qc.invalidateQueries({ queryKey: ['schedules-month'] });
@@ -171,18 +171,18 @@ export default function SessionWizardModal({ onClose, isOwner }: Props) {
     setError(''); setSubmitting(true);
     const dates = generateDates(wiz);
     try {
-      for (const date of dates) {
-        await createMut.mutateAsync({
-          course_id:       wiz.courseId ?? undefined,
-          teacher_user_id: wiz.teacherUserId ?? undefined,
-          starts_at:       `${date}T${wiz.startTime}:00`,
-          ends_at:         `${date}T${wiz.endTime}:00`,
-          max_capacity:    wiz.maxCapacity ? parseInt(wiz.maxCapacity) : undefined,
-          notes:           wiz.notes || undefined,
-          schedule_type:   'branch',
-          force:           true,
-        });
-      }
+      await createMut.mutateAsync({
+        course_id:       wiz.courseId ?? undefined,
+        teacher_user_id: wiz.teacherUserId ?? undefined,
+        max_capacity:    wiz.maxCapacity ? parseInt(wiz.maxCapacity) : undefined,
+        notes:           wiz.notes || undefined,
+        schedule_type:   'branch',
+        force:           true,
+        sessions: dates.map(date => ({
+          starts_at: `${date}T${wiz.startTime}:00`,
+          ends_at:   `${date}T${wiz.endTime}:00`,
+        })),
+      });
       onClose();
     } catch (e: any) {
       setError(e?.response?.data?.error || 'Failed to create session');

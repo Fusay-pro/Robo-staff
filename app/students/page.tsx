@@ -7,6 +7,8 @@ import Link from 'next/link';
 import client from '@/lib/api';
 import { downloadCsv } from '@/lib/csv';
 import { useT } from '@/context/I18nContext';
+import { useAuth } from '@/context/AuthContext';
+import AddStudentModal from './_components/AddStudentModal';
 
 const PAGE_SIZE = 20;
 
@@ -16,6 +18,9 @@ function initials(name: string) {
 
 export default function StudentsPage() {
   const { t } = useT();
+  const { role } = useAuth();
+  const isOwner = role === 'owner' || role === 'super_owner';
+  const [addOpen, setAddOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'pending'>('all');
@@ -75,6 +80,14 @@ export default function StudentsPage() {
             <h2 className="text-3xl font-bold text-on-surface">{t('students.title')}</h2>
             <p className="text-on-surface-variant mt-1 text-sm">{t('students.subtitle2')}</p>
           </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {isOwner && (
+              <button onClick={() => setAddOpen(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:opacity-90 transition-opacity">
+                <span className="material-symbols-outlined text-[18px]">person_add</span>
+                <span className="hidden sm:inline">{t('students.addStudentTitle')}</span>
+              </button>
+            )}
           <button onClick={() => downloadCsv('students', displayList, [
             { key: 'name',                label: 'Name' },
             { key: 'nickname',            label: 'Nickname' },
@@ -86,10 +99,11 @@ export default function StudentsPage() {
             { key: 'parent_phone',        label: 'Phone' },
           ])}
           disabled={displayList.length === 0}
-          className="flex items-center gap-2 px-4 py-2.5 bg-surface-container-lowest border border-outline-variant/40 rounded-xl text-sm font-bold text-on-surface hover:bg-surface-container hover:border-primary/40 transition-colors disabled:opacity-50 shrink-0">
+          className="flex items-center gap-2 px-4 py-2.5 bg-surface-container-lowest border border-outline-variant/40 rounded-xl text-sm font-bold text-on-surface hover:bg-surface-container hover:border-primary/40 transition-colors disabled:opacity-50">
             <span className="material-symbols-outlined text-[18px]">download</span>
             <span className="hidden sm:inline">{t('common.exportCsv')}</span>
           </button>
+          </div>
         </div>
 
         {/* Stats row */}
@@ -238,6 +252,7 @@ export default function StudentsPage() {
           </>
         )}
       </div>
+      <AddStudentModal open={addOpen} onClose={() => setAddOpen(false)} />
     </AppShell>
   );
 }

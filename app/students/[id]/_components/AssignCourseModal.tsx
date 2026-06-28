@@ -13,7 +13,7 @@ interface Props {
 export default function AssignCourseModal({ open, studentId, onClose }: Props) {
   const { t } = useT();
   const qc = useQueryClient();
-  const [form, setForm] = useState({ course_id: '', class_count: '', price: '', name: '' });
+  const [form, setForm] = useState({ course_id: '', class_count: '', price: '', name: '', payment_method: 'cash' });
   const [err, setErr]   = useState('');
 
   const { data: courses = [] } = useQuery<any[]>({
@@ -27,7 +27,7 @@ export default function AssignCourseModal({ open, studentId, onClose }: Props) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['student-packages', studentId] });
       qc.invalidateQueries({ queryKey: ['student', studentId] });
-      setForm({ course_id: '', class_count: '', price: '', name: '' });
+      setForm({ course_id: '', class_count: '', price: '', name: '', payment_method: 'cash' });
       setErr('');
       onClose();
     },
@@ -40,11 +40,12 @@ export default function AssignCourseModal({ open, studentId, onClose }: Props) {
     if (!form.class_count || parseInt(form.class_count) < 1) { setErr('Please enter number of classes'); return; }
     if (form.price === '') { setErr('Please enter a price'); return; }
     mut.mutate({
-      student_id:  parseInt(studentId),
-      course_id:   parseInt(form.course_id),
-      class_count: parseInt(form.class_count),
-      price:       parseFloat(form.price),
-      name:        form.name.trim() || undefined,
+      student_id:     parseInt(studentId),
+      course_id:      parseInt(form.course_id),
+      class_count:    parseInt(form.class_count),
+      price:          parseFloat(form.price),
+      name:           form.name.trim() || undefined,
+      payment_method: form.payment_method,
     });
   }
 
@@ -86,6 +87,15 @@ export default function AssignCourseModal({ open, studentId, onClose }: Props) {
                 onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
                 className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
             </div>
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">{t('students.paymentMethod')} *</label>
+            <select value={form.payment_method}
+              onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))}
+              className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+              <option value="cash">{t('students.cash')}</option>
+              <option value="transfer">{t('students.transfer')}</option>
+            </select>
           </div>
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">

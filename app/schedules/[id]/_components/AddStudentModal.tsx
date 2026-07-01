@@ -111,9 +111,12 @@ export default function AddStudentModal({ scheduleId, sessionFull, onClose }: Pr
                     <button key={s.student_id} onClick={() => { setSelStudent(s); setStep(2); setError(''); }}
                       className="w-full flex items-center gap-3 p-3 bg-surface-container-lowest rounded-2xl border border-outline-variant/30 hover:border-primary/40 hover:bg-primary/5 transition-all text-left">
                       <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0">{initials(s.name)}</div>
-                      <p className="flex-1 text-sm font-semibold text-on-surface">{s.name}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-on-surface">{s.name}</p>
+                        {s.parent_name && <p className="text-xs text-on-surface-variant truncate">{s.parent_name}</p>}
+                      </div>
                       {typeof s.classes_remaining === 'number' && (
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${s.classes_remaining <= 3 ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'}`}>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${s.classes_remaining <= 3 ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'}`}>
                           {s.classes_remaining} left
                         </span>
                       )}

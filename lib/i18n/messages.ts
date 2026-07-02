@@ -713,6 +713,15 @@ export const messages = {
     'sync.editSheetsHint':    'Paste the full Google Sheets URL or just the spreadsheet ID.',
     'sync.confirmPassword':   'Confirm with password',
     'sync.saveError':         'Failed to save',
+    'sync.importStudents':        'Import Students from Registration Sheet',
+    'sync.importStudentsHint':    'Read student registration data from the configured Google Sheet and create new student records. Duplicates are skipped automatically.',
+    'sync.importStudentsSuccess': 'Imported {count} students',
+    'sync.resetTitle':            'Danger Zone',
+    'sync.resetHint':             'Permanently delete all students, staff, courses, schedules, transactions, and packages for this branch. This cannot be undone.',
+    'sync.resetConfirm':          'Reset All Data',
+    'sync.resetWarning':          'This will permanently delete ALL data for this branch except the owner account and branch settings.',
+    'sync.resetting':             'Resetting…',
+    'sync.resetError':            'Reset failed',
 
     // Dates
     'date.days.sun':         'Sun',
@@ -1472,6 +1481,15 @@ export const messages = {
     'sync.editSheetsHint':    'วาง URL เต็มของ Google Sheets หรือแค่ spreadsheet ID',
     'sync.confirmPassword':   'ยืนยันด้วยรหัสผ่าน',
     'sync.saveError':         'บันทึกไม่สำเร็จ',
+    'sync.importStudents':        'นำเข้านักเรียนจากชีทลงทะเบียน',
+    'sync.importStudentsHint':    'อ่านข้อมูลการลงทะเบียนนักเรียนจาก Google Sheet ที่กำหนดและสร้างข้อมูลนักเรียนใหม่ ข้อมูลซ้ำจะถูกข้ามโดยอัตโนมัติ',
+    'sync.importStudentsSuccess': 'นำเข้านักเรียนแล้ว {count} คน',
+    'sync.resetTitle':            'โซนอันตราย',
+    'sync.resetHint':             'ลบข้อมูลนักเรียน พนักงาน คอร์ส ตารางเรียน รายการชำระเงิน และแพ็กเกจทั้งหมดของสาขานี้อย่างถาวร ไม่สามารถกู้คืนได้',
+    'sync.resetConfirm':          'รีเซ็ตข้อมูลทั้งหมด',
+    'sync.resetWarning':          'การดำเนินการนี้จะลบข้อมูลทั้งหมดของสาขานี้อย่างถาวร ยกเว้นบัญชีเจ้าของและการตั้งค่าสาขา',
+    'sync.resetting':             'กำลังรีเซ็ต…',
+    'sync.resetError':            'รีเซ็ตไม่สำเร็จ',
 
     // Dates
     'date.days.sun':         'อา',

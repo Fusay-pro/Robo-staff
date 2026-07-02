@@ -122,6 +122,62 @@ function EditSheetsModal({ current, onClose, onSaved }: {
   );
 }
 
+type ImportResult = { imported: number; skipped: number; errors: string[] } | null;
+
+function ResetModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
+  const { t } = useT();
+  const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
+  const [err, setErr]           = useState('');
+
+  const mut = useMutation({
+    mutationFn: () => client.post('/admin/reset', { password, confirmed: true }).then(r => r.data),
+    onSuccess: () => { onDone(); onClose(); },
+    onError:   (e: any) => setErr(e?.response?.data?.error || t('sync.resetError')),
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-surface rounded-3xl shadow-2xl z-10 w-full max-w-sm">
+        <div className="px-6 pt-5 pb-3 border-b border-error/20">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-9 h-9 rounded-xl bg-error/10 flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-error text-[20px]">warning</span>
+            </div>
+            <h3 className="text-lg font-bold text-on-surface">{t('sync.resetTitle')}</h3>
+          </div>
+          <p className="text-xs text-on-surface-variant mt-1">{t('sync.resetWarning')}</p>
+        </div>
+        <div className="px-6 py-5 space-y-4">
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">{t('sync.confirmPassword')}</label>
+            <div className="flex items-center gap-2 rounded-xl border border-outline-variant bg-surface-container-low px-3 focus-within:border-error focus-within:ring-2 focus-within:ring-error/20 transition-all">
+              <input type={showPass ? 'text' : 'password'} value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="flex-1 bg-transparent py-2.5 text-sm text-on-surface outline-none" />
+              <button type="button" onClick={() => setShowPass(v => !v)} className="text-on-surface-variant">
+                <span className="material-symbols-outlined text-[18px]">{showPass ? 'visibility_off' : 'visibility'}</span>
+              </button>
+            </div>
+          </div>
+          {err && <p className="text-xs text-error bg-error-container/30 rounded-xl px-3 py-2">{err}</p>}
+        </div>
+        <div className="px-6 pb-5 flex gap-3">
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-outline-variant text-sm font-semibold text-on-surface-variant hover:bg-surface-container transition-colors">
+            {t('common.cancel')}
+          </button>
+          <button onClick={() => mut.mutate()} disabled={!password || mut.isPending}
+            className="flex-1 py-2.5 rounded-xl bg-error text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity">
+            {mut.isPending ? t('sync.resetting') : t('sync.resetConfirm')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DataSyncPanel() {
   const { t } = useT();
   const qc = useQueryClient();
@@ -130,6 +186,8 @@ export default function DataSyncPanel() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [diff, setDiff]             = useState<DiffResult>(null);
   const [editSheets, setEditSheets] = useState(false);
+  const [importResult, setImportResult] = useState<ImportResult>(null);
+  const [showReset, setShowReset]       = useState(false);
 
   const { data: status, refetch: refetchStatus } = useQuery<SyncStatus>({
     queryKey: ['sync-status'],
@@ -150,6 +208,12 @@ export default function DataSyncPanel() {
   const previewMut = useMutation({
     mutationFn: () => client.post('/admin/sync/pull/preview').then(r => r.data),
     onSuccess: (data) => { setDiff(data); setPreviewOpen(true); },
+    onError:   (e: any) => setPushErr(e?.response?.data?.error || t('sync.importError')),
+  });
+
+  const importStudentsMut = useMutation({
+    mutationFn: () => client.post('/admin/sync/import-students').then(r => r.data),
+    onSuccess: (data) => { setImportResult(data); qc.invalidateQueries({ queryKey: ['students-list'] }); qc.invalidateQueries({ queryKey: ['students-stats'] }); },
     onError:   (e: any) => setPushErr(e?.response?.data?.error || t('sync.importError')),
   });
 
@@ -205,6 +269,35 @@ export default function DataSyncPanel() {
         </button>
       </div>
 
+      {/* Import students from registration sheet */}
+      <div className="p-6 border-t border-outline-variant/20">
+        <h4 className="font-bold text-on-surface text-sm mb-1">{t('sync.importStudents')}</h4>
+        <p className="text-xs text-on-surface-variant mb-4">{t('sync.importStudentsHint')}</p>
+
+        {importResult && (
+          <div className={`mb-3 rounded-xl px-3 py-2.5 text-xs space-y-0.5 ${importResult.errors.length ? 'bg-amber-50 border border-amber-200' : 'bg-emerald-50 border border-emerald-200'}`}>
+            <p className="font-bold text-on-surface">
+              {t('sync.importStudentsSuccess', { count: importResult.imported })}
+            </p>
+            {importResult.skipped > 0 && (
+              <p className="text-on-surface-variant">Skipped {importResult.skipped} duplicates</p>
+            )}
+            {importResult.errors.map((e, i) => (
+              <p key={i} className="text-error">{e}</p>
+            ))}
+          </div>
+        )}
+
+        <button
+          onClick={() => { setImportResult(null); setPushErr(''); importStudentsMut.mutate(); }}
+          disabled={importStudentsMut.isPending}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-outline-variant text-sm font-bold text-on-surface hover:bg-surface-container disabled:opacity-50 transition-colors"
+        >
+          <span className="material-symbols-outlined text-[16px]">person_add</span>
+          {importStudentsMut.isPending ? t('sync.importing') : t('sync.importStudents')}
+        </button>
+      </div>
+
       {/* Sheet URL settings */}
       <div className="p-6 border-t border-outline-variant/20">
         <div className="flex items-center justify-between mb-3">
@@ -224,12 +317,36 @@ export default function DataSyncPanel() {
         </div>
       </div>
 
+      {/* Danger zone */}
+      <div className="p-6 border-t border-error/20 bg-error/5">
+        <h4 className="font-bold text-error text-sm mb-1 flex items-center gap-1.5">
+          <span className="material-symbols-outlined text-[16px]">dangerous</span>
+          {t('sync.resetTitle')}
+        </h4>
+        <p className="text-xs text-on-surface-variant mb-4">{t('sync.resetHint')}</p>
+        <button onClick={() => setShowReset(true)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-error/40 text-sm font-bold text-error hover:bg-error/10 transition-colors">
+          <span className="material-symbols-outlined text-[16px]">delete_forever</span>
+          {t('sync.resetConfirm')}
+        </button>
+      </div>
+
       <ImportPreviewModal
         open={previewOpen}
         diff={diff}
         onClose={() => setPreviewOpen(false)}
         onImportSuccess={() => refetchStatus()}
       />
+
+      {showReset && (
+        <ResetModal
+          onClose={() => setShowReset(false)}
+          onDone={() => {
+            qc.invalidateQueries();
+            setPushOk(false);
+          }}
+        />
+      )}
 
       {editSheets && sheetUrls !== undefined && (
         <EditSheetsModal

@@ -198,7 +198,12 @@ export default function StudentsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div>
-                          <p className="font-bold text-on-surface text-base group-hover:text-primary transition-colors leading-tight">{s.name}</p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-bold text-on-surface text-base group-hover:text-primary transition-colors leading-tight">{s.name}</p>
+                            {s.student_code && (
+                              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">{s.student_code}</span>
+                            )}
+                          </div>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
                             {s.age && (
                               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant">

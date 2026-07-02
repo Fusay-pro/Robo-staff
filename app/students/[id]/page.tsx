@@ -111,6 +111,9 @@ export default function StudentDetailPage() {
             {initStr}
           </div>
           <div className="flex-1 text-center md:text-left">
+            {student.student_code && (
+              <p className="text-xs font-mono font-bold text-primary mb-1 text-center md:text-left">{student.student_code}</p>
+            )}
             <div className="flex items-start justify-center md:justify-start gap-3 flex-wrap">
               <h1 className="text-3xl font-bold text-on-surface">{student.name}</h1>
               {isOwner && (
@@ -161,7 +164,7 @@ export default function StudentDetailPage() {
               {[
                 { label: t('students.dob'), value: student.date_of_birth ? (() => { const dt = new Date(student.date_of_birth); return `${dt.getDate()} ${t(`date.months.${dt.getMonth() + 1}`)} ${dt.getFullYear()}`; })() : student.age ? `${t('approvals.ageLabel')} ${student.age}` : '—' },
                 { label: t('students.school'), value: student.school_name || '—' },
-                { label: t('students.parentName'), value: student.parent_name || '—' },
+                { label: t('students.parentName'), value: student.parent_name ? `${student.parent_name}${student.parent_code ? ` · ${student.parent_code}` : ''}` : '—' },
                 { label: t('students.parentPhone'), value: student.parent_phone || '—' },
               ].map(({ label, value }) => (
                 <div key={label}>

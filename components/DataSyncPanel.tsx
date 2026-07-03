@@ -122,7 +122,7 @@ function EditSheetsModal({ current, onClose, onSaved }: {
   );
 }
 
-type ImportResult = { imported: number; skipped: number; errors: string[] } | null;
+type ImportResult = { imported: number; skipped: number; parents?: number; sheetUpdated?: boolean; errors: string[] } | null;
 
 function ResetModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
   const { t } = useT();
@@ -281,6 +281,12 @@ export default function DataSyncPanel() {
             </p>
             {importResult.skipped > 0 && (
               <p className="text-on-surface-variant">Skipped {importResult.skipped} duplicates</p>
+            )}
+            {typeof importResult.parents === 'number' && importResult.parents > 0 && (
+              <p className="text-on-surface-variant">Created {importResult.parents} parent accounts (RCP codes)</p>
+            )}
+            {importResult.sheetUpdated && (
+              <p className="text-on-surface-variant">✓ Wrote parent codes back to the sheet</p>
             )}
             {importResult.errors.map((e, i) => (
               <p key={i} className="text-error">{e}</p>

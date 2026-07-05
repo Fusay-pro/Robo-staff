@@ -22,6 +22,50 @@ function fmtDate(iso: string) {
   return `${d.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]} ${d.getFullYear()} · ${d.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}`;
 }
 
+function CollapsibleSection({ icon, title, subtitle, defaultOpen = false, danger = false, children }: {
+  icon: string; title: string; subtitle: string; defaultOpen?: boolean; danger?: boolean; children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className={`border-t border-outline-variant/20 first:border-t-0 ${danger ? 'bg-error/5' : ''}`}>
+      <button onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between gap-3 p-6 text-left hover:bg-surface-container/40 transition-colors">
+        <div className="min-w-0">
+          <h4 className={`flex items-center gap-2 font-bold text-sm ${danger ? 'text-error' : 'text-on-surface'}`}>
+            <span className="material-symbols-outlined text-[18px]">{icon}</span>
+            {title}
+          </h4>
+          <p className="text-xs text-on-surface-variant mt-1 truncate">{subtitle}</p>
+        </div>
+        <span className={`material-symbols-outlined text-on-surface-variant text-[20px] shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>
+          expand_more
+        </span>
+      </button>
+      {open && <div className="px-6 pb-6">{children}</div>}
+    </div>
+  );
+}
+
+function PasswordField({ value, onChange, error }: { value: string; onChange: (v: string) => void; error?: string }) {
+  const { t } = useT();
+  const [show, setShow] = useState(false);
+  return (
+    <div className="mb-3">
+      <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">{t('sync.passwordLabel')}</label>
+      <div className="flex items-center gap-2 rounded-xl border border-outline-variant bg-surface-container-low px-3 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+        <input type={show ? 'text' : 'password'} value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder="••••••••"
+          className="flex-1 bg-transparent py-2.5 text-sm text-on-surface outline-none" />
+        <button type="button" onClick={() => setShow(v => !v)} className="text-on-surface-variant hover:text-primary transition-colors">
+          <span className="material-symbols-outlined text-[18px]">{show ? 'visibility_off' : 'visibility'}</span>
+        </button>
+      </div>
+      {error && <p className="text-xs text-error bg-error-container/30 rounded-xl px-3 py-2 mt-2">{error}</p>}
+    </div>
+  );
+}
+
 function SheetUrlField({ label, value }: { label: string; value: string | null }) {
   const { t } = useT();
   return (
@@ -131,7 +175,7 @@ function ResetModal({ onClose, onDone }: { onClose: () => void; onDone: () => vo
   const [err, setErr]           = useState('');
 
   const mut = useMutation({
-    mutationFn: () => client.post('/admin/reset', { password, confirmed: true }).then(r => r.data),
+    mutationFn: () => client.post('/admin/sync/reset', { password, confirmed: true }).then(r => r.data),
     onSuccess: () => { onDone(); onClose(); },
     onError:   (e: any) => setErr(e?.response?.data?.error || t('sync.resetError')),
   });
@@ -188,6 +232,10 @@ export default function DataSyncPanel() {
   const [editSheets, setEditSheets] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult>(null);
   const [showReset, setShowReset]       = useState(false);
+  const [pushPassword, setPushPassword]     = useState('');
+  const [pushPassErr, setPushPassErr]       = useState('');
+  const [importPassword, setImportPassword] = useState('');
+  const [importPassErr, setImportPassErr]   = useState('');
 
   const { data: status, refetch: refetchStatus } = useQuery<SyncStatus>({
     queryKey: ['sync-status'],
@@ -200,9 +248,9 @@ export default function DataSyncPanel() {
   });
 
   const pushMut = useMutation({
-    mutationFn: () => client.post('/admin/sync/push').then(r => r.data),
-    onSuccess: () => { setPushOk(true); setPushErr(''); refetchStatus(); setTimeout(() => setPushOk(false), 4000); },
-    onError:   (e: any) => setPushErr(e?.response?.data?.error || t('sync.syncError')),
+    mutationFn: (password: string) => client.post('/admin/sync/push', { password, confirmed: true }).then(r => r.data),
+    onSuccess: () => { setPushOk(true); setPushPassErr(''); setPushPassword(''); refetchStatus(); setTimeout(() => setPushOk(false), 4000); },
+    onError:   (e: any) => setPushPassErr(e?.response?.data?.error || t('sync.syncError')),
   });
 
   const previewMut = useMutation({
@@ -212,40 +260,29 @@ export default function DataSyncPanel() {
   });
 
   const importStudentsMut = useMutation({
-    mutationFn: () => client.post('/admin/sync/import-students').then(r => r.data),
-    onSuccess: (data) => { setImportResult(data); qc.invalidateQueries({ queryKey: ['students-list'] }); qc.invalidateQueries({ queryKey: ['students-stats'] }); },
-    onError:   (e: any) => setPushErr(e?.response?.data?.error || t('sync.importError')),
+    mutationFn: (password: string) => client.post('/admin/sync/import-students', { password, confirmed: true }).then(r => r.data),
+    onSuccess: (data) => {
+      setImportResult(data); setImportPassErr(''); setImportPassword('');
+      qc.invalidateQueries({ queryKey: ['students-list'] }); qc.invalidateQueries({ queryKey: ['students-stats'] });
+    },
+    onError:   (e: any) => setImportPassErr(e?.response?.data?.error || t('sync.importError')),
   });
 
   return (
     <div className="mt-6 bg-surface-container-lowest rounded-3xl border border-outline-variant/30 overflow-hidden">
       {/* Push section */}
-      <div className="p-6 border-b border-outline-variant/20">
-        <div className="flex items-center justify-between mb-1">
-          <h3 className="flex items-center gap-2 font-bold text-on-surface">
-            <span className="material-symbols-outlined text-primary text-[20px]">cloud_sync</span>
-            {t('sync.title')}
-          </h3>
-        </div>
-        <p className="text-xs text-on-surface-variant mb-4">
-          {status?.synced_at
-            ? `${t('sync.lastSync')}: ${fmtDate(status.synced_at)} · ${status.triggered_by}`
-            : t('sync.never')}
-        </p>
-
+      <CollapsibleSection icon="cloud_sync" title={t('sync.title')}
+        subtitle={status?.synced_at ? `${t('sync.lastSync')}: ${fmtDate(status.synced_at)} · ${status.triggered_by}` : t('sync.never')}>
         {pushOk && (
           <p className="text-xs text-emerald-700 bg-emerald-50 rounded-xl px-3 py-2 mb-3 flex items-center gap-1.5">
             <span className="material-symbols-outlined text-[14px]">check_circle</span>
             {t('sync.syncSuccess')}
           </p>
         )}
-        {pushErr && (
-          <p className="text-xs text-error bg-error-container/30 rounded-xl px-3 py-2 mb-3">{pushErr}</p>
-        )}
-
+        <PasswordField value={pushPassword} onChange={setPushPassword} error={pushPassErr} />
         <button
-          onClick={() => { setPushOk(false); setPushErr(''); pushMut.mutate(); }}
-          disabled={pushMut.isPending}
+          onClick={() => { setPushOk(false); setPushPassErr(''); pushMut.mutate(pushPassword); }}
+          disabled={!pushPassword || pushMut.isPending}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity"
         >
           <span className="material-symbols-outlined text-[16px]">
@@ -253,12 +290,13 @@ export default function DataSyncPanel() {
           </span>
           {pushMut.isPending ? t('sync.syncing') : t('sync.syncNow')}
         </button>
-      </div>
+      </CollapsibleSection>
 
       {/* Pull section */}
-      <div className="p-6">
-        <h4 className="font-bold text-on-surface text-sm mb-1">{t('sync.importTitle')}</h4>
-        <p className="text-xs text-on-surface-variant mb-4">{t('sync.importHint')}</p>
+      <CollapsibleSection icon="download" title={t('sync.importTitle')} subtitle={t('sync.importHint')}>
+        {pushErr && (
+          <p className="text-xs text-error bg-error-container/30 rounded-xl px-3 py-2 mb-3">{pushErr}</p>
+        )}
         <button
           onClick={() => previewMut.mutate()}
           disabled={previewMut.isPending}
@@ -267,13 +305,10 @@ export default function DataSyncPanel() {
           <span className="material-symbols-outlined text-[16px]">download</span>
           {previewMut.isPending ? t('sync.previewing') : t('sync.previewImport')}
         </button>
-      </div>
+      </CollapsibleSection>
 
       {/* Import students from registration sheet */}
-      <div className="p-6 border-t border-outline-variant/20">
-        <h4 className="font-bold text-on-surface text-sm mb-1">{t('sync.importStudents')}</h4>
-        <p className="text-xs text-on-surface-variant mb-4">{t('sync.importStudentsHint')}</p>
-
+      <CollapsibleSection icon="person_add" title={t('sync.importStudents')} subtitle={t('sync.importStudentsHint')}>
         {importResult && (
           <div className={`mb-3 rounded-xl px-3 py-2.5 text-xs space-y-0.5 ${importResult.errors.length ? 'bg-amber-50 border border-amber-200' : 'bg-emerald-50 border border-emerald-200'}`}>
             <p className="font-bold text-on-surface">
@@ -294,15 +329,16 @@ export default function DataSyncPanel() {
           </div>
         )}
 
+        <PasswordField value={importPassword} onChange={setImportPassword} error={importPassErr} />
         <button
-          onClick={() => { setImportResult(null); setPushErr(''); importStudentsMut.mutate(); }}
-          disabled={importStudentsMut.isPending}
+          onClick={() => { setImportResult(null); setImportPassErr(''); importStudentsMut.mutate(importPassword); }}
+          disabled={!importPassword || importStudentsMut.isPending}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-outline-variant text-sm font-bold text-on-surface hover:bg-surface-container disabled:opacity-50 transition-colors"
         >
           <span className="material-symbols-outlined text-[16px]">person_add</span>
           {importStudentsMut.isPending ? t('sync.importing') : t('sync.importStudents')}
         </button>
-      </div>
+      </CollapsibleSection>
 
       {/* Sheet URL settings */}
       <div className="p-6 border-t border-outline-variant/20">

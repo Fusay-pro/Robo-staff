@@ -192,18 +192,21 @@ export default function StudentsPage() {
                   <Link key={s.student_id} href={`/students/${s.student_id}`}
                     className="group bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/30 shadow-sm hover:border-primary/40 hover:-translate-y-0.5 hover:shadow-md transition-all flex gap-4">
                     <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-white text-lg font-bold shrink-0 shadow-md shadow-primary/20">
-                      {s.name ? initials(s.name) : '?'}
+                      {(s.nickname || s.name) ? initials(s.nickname || s.name) : '?'}
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-bold text-on-surface text-base group-hover:text-primary transition-colors leading-tight">{s.name}</p>
+                            <p className="font-bold text-on-surface text-base group-hover:text-primary transition-colors leading-tight">{s.nickname || s.name}</p>
                             {s.student_code && (
                               <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">{s.student_code}</span>
                             )}
                           </div>
+                          {s.nickname && (
+                            <p className="text-xs text-on-surface-variant mt-0.5 truncate">{s.name}</p>
+                          )}
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
                             {s.age && (
                               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant">

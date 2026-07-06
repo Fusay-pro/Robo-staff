@@ -115,7 +115,7 @@ export default function StudentDetailPage() {
               <p className="text-xs font-mono font-bold text-primary mb-1 text-center md:text-left">{student.student_code}</p>
             )}
             <div className="flex items-start justify-center md:justify-start gap-3 flex-wrap">
-              <h1 className="text-3xl font-bold text-on-surface">{student.name}</h1>
+              <h1 className="text-3xl font-bold text-on-surface">{student.nickname || student.name}</h1>
               {isOwner && (
                 <button onClick={() => setEditKidOpen(true)}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors">
@@ -124,7 +124,7 @@ export default function StudentDetailPage() {
                 </button>
               )}
             </div>
-            {student.nickname && <p className="text-on-surface-variant mt-0.5">"{student.nickname}"</p>}
+            {student.nickname && <p className="text-on-surface-variant mt-0.5">{student.name}</p>}
             <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-3">
               <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${
                 isApproved ? 'bg-emerald-100 text-emerald-800'
@@ -163,7 +163,7 @@ export default function StudentDetailPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-6">
               {[
                 { label: t('students.dob'), value: student.date_of_birth ? (() => { const dt = new Date(student.date_of_birth); return `${dt.getDate()} ${t(`date.months.${dt.getMonth() + 1}`)} ${dt.getFullYear()}`; })() : student.age ? `${t('approvals.ageLabel')} ${student.age}` : '—' },
-                { label: t('students.school'), value: student.school_name || '—' },
+                { label: t('students.school'), value: student.school || '—' },
                 { label: t('students.parentName'), value: student.parent_name ? `${student.parent_name}${student.parent_code ? ` · ${student.parent_code}` : ''}` : '—' },
                 { label: t('students.parentPhone'), value: student.parent_phone || '—' },
               ].map(({ label, value }) => (

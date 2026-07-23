@@ -49,6 +49,15 @@ export default function StudentDetailPage() {
     },
   });
 
+  const archiveMut = useMutation({
+    mutationFn: (archived: boolean) => client.patch(`/students/${id}/archive`, { archived }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['student', id] });
+      qc.invalidateQueries({ queryKey: ['students-list'] });
+      qc.invalidateQueries({ queryKey: ['students-stats'] });
+    },
+  });
+
   const [deletePkgTarget, setDeletePkgTarget] = useState<any>(null);
   const [editPkgTarget, setEditPkgTarget]     = useState<any>(null);
   const [showInactive, setShowInactive]       = useState(false);
@@ -125,6 +134,11 @@ export default function StudentDetailPage() {
                     <span className="material-symbols-outlined text-[14px]">edit</span>
                     {t('students.editLabel')}
                   </button>
+                  <button onClick={() => archiveMut.mutate(!student.archived_at)} disabled={archiveMut.isPending}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container text-on-surface-variant text-xs font-bold hover:bg-surface-container-high disabled:opacity-50 transition-colors">
+                    <span className="material-symbols-outlined text-[14px]">{student.archived_at ? 'visibility' : 'visibility_off'}</span>
+                    {student.archived_at ? t('students.unhideLabel') : t('students.hideLabel')}
+                  </button>
                   <button onClick={() => setDeleteKidOpen(true)}
                     className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-error/10 text-error text-xs font-bold hover:bg-error/20 transition-colors">
                     <span className="material-symbols-outlined text-[14px]">delete</span>
@@ -135,6 +149,12 @@ export default function StudentDetailPage() {
             </div>
             {student.nickname && <p className="text-on-surface-variant mt-0.5">{student.name}</p>}
             <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-3">
+              {student.archived_at && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-surface-container-high text-on-surface-variant">
+                  <span className="material-symbols-outlined text-[14px]">visibility_off</span>
+                  {t('students.archived')}
+                </span>
+              )}
               <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${
                 isApproved ? 'bg-emerald-100 text-emerald-800'
                 : isPending ? 'bg-orange-100 text-orange-800'

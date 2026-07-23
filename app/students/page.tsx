@@ -23,7 +23,7 @@ export default function StudentsPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'pending'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'pending' | 'archived'>('all');
   const [page, setPage] = useState(0);
   const [accumulated, setAccumulated] = useState<any[]>([]);
 
@@ -40,7 +40,10 @@ export default function StudentsPage() {
     staleTime: 60_000,
   });
 
-  const approvalParam = statusFilter === 'all' ? '' : `&approval_status=${statusFilter}`;
+  const approvalParam =
+    statusFilter === 'archived' ? '&archived=true'
+    : statusFilter === 'all'    ? ''
+    : `&approval_status=${statusFilter}`;
   const searchParam = debouncedSearch ? `&search=${encodeURIComponent(debouncedSearch)}` : '';
 
   const { data: pageData, isLoading, isFetching } = useQuery<{ data: any[]; total: number }>({
@@ -155,7 +158,7 @@ export default function StudentsPage() {
           </div>
 
           <div className="flex gap-1 bg-surface-container-lowest rounded-xl p-1 border border-outline-variant/20">
-            {(['all', 'approved', 'pending'] as const).map(s => (
+            {(['all', 'approved', 'pending', 'archived'] as const).map(s => (
               <button key={s} onClick={() => setStatusFilter(s)}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-bold capitalize transition-colors ${
                   statusFilter === s

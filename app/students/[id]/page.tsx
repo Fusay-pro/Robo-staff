@@ -10,6 +10,7 @@ import { useT } from '@/context/I18nContext';
 import AssignCourseModal from './_components/AssignCourseModal';
 import EditPackageModal  from './_components/EditPackageModal';
 import DeletePackageModal from './_components/DeletePackageModal';
+import DeleteStudentModal from './_components/DeleteStudentModal';
 import EditStudentModal  from './_components/EditStudentModal';
 
 function initials(name: string) {
@@ -53,6 +54,7 @@ export default function StudentDetailPage() {
   const [showInactive, setShowInactive]       = useState(false);
   const [editKidOpen, setEditKidOpen]         = useState(false);
   const [addPkgOpen, setAddPkgOpen]           = useState(false);
+  const [deleteKidOpen, setDeleteKidOpen]     = useState(false);
 
   const { data: notes = [] } = useQuery<any[]>({
     queryKey: ['student-notes', id],
@@ -117,11 +119,18 @@ export default function StudentDetailPage() {
             <div className="flex items-start justify-center md:justify-start gap-3 flex-wrap">
               <h1 className="text-3xl font-bold text-on-surface">{student.nickname || student.name}</h1>
               {isOwner && (
-                <button onClick={() => setEditKidOpen(true)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors">
-                  <span className="material-symbols-outlined text-[14px]">edit</span>
-                  {t('students.editLabel')}
-                </button>
+                <>
+                  <button onClick={() => setEditKidOpen(true)}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors">
+                    <span className="material-symbols-outlined text-[14px]">edit</span>
+                    {t('students.editLabel')}
+                  </button>
+                  <button onClick={() => setDeleteKidOpen(true)}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-error/10 text-error text-xs font-bold hover:bg-error/20 transition-colors">
+                    <span className="material-symbols-outlined text-[14px]">delete</span>
+                    {t('students.deleteLabel')}
+                  </button>
+                </>
               )}
             </div>
             {student.nickname && <p className="text-on-surface-variant mt-0.5">{student.name}</p>}
@@ -366,6 +375,9 @@ export default function StudentDetailPage() {
       <EditPackageModal target={editPkgTarget} studentId={id} onClose={() => setEditPkgTarget(null)} />
       <DeletePackageModal target={deletePkgTarget} studentId={id} onClose={() => setDeletePkgTarget(null)} />
       <EditStudentModal open={editKidOpen} student={student} studentId={id} onClose={() => setEditKidOpen(false)} />
+      {deleteKidOpen && (
+        <DeleteStudentModal studentId={id} studentName={student.nickname || student.name} onClose={() => setDeleteKidOpen(false)} />
+      )}
     </AppShell>
   );
 }

@@ -72,7 +72,7 @@ export default function AddStudentModal({ scheduleId, sessionFull, onClose }: Pr
             )}
             <div>
               <h3 className="font-bold text-on-surface text-lg">Add Student</h3>
-              <p className="text-xs text-on-surface-variant">{step === 1 ? 'Pick a student' : `Pick a package for ${selStudent?.name}`}</p>
+              <p className="text-xs text-on-surface-variant">{step === 1 ? 'Pick a student' : `Pick a package for ${selStudent?.nickname || selStudent?.name}`}</p>
             </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container transition-colors">
@@ -110,10 +110,14 @@ export default function AddStudentModal({ scheduleId, sessionFull, onClose }: Pr
                   {students.map(s => (
                     <button key={s.student_id} onClick={() => { setSelStudent(s); setStep(2); setError(''); }}
                       className="w-full flex items-center gap-3 p-3 bg-surface-container-lowest rounded-2xl border border-outline-variant/30 hover:border-primary/40 hover:bg-primary/5 transition-all text-left">
-                      <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0">{initials(s.name)}</div>
+                      <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0">{initials(s.nickname || s.name)}</div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-on-surface">{s.name}</p>
-                        {s.parent_name && <p className="text-xs text-on-surface-variant truncate">{s.parent_name}</p>}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="text-sm font-semibold text-on-surface">{s.nickname || s.name}</p>
+                          {s.student_code && <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary shrink-0">{s.student_code}</span>}
+                        </div>
+                        {s.nickname && <p className="text-xs text-on-surface-variant truncate">{s.name}</p>}
+                        {s.parent_name && <p className="text-[11px] text-on-surface-variant truncate">{s.parent_name}</p>}
                       </div>
                       {typeof s.classes_remaining === 'number' && (
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${s.classes_remaining <= 3 ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'}`}>

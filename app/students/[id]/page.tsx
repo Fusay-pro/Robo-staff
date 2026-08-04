@@ -70,6 +70,11 @@ export default function StudentDetailPage() {
     queryFn: () => client.get(`/students/${id}/notes`).then(r => r.data),
   });
 
+  const { data: attendance } = useQuery<{ summary: { present: number; absent: number; excused: number; total: number }; records: any[] }>({
+    queryKey: ['student-attendance', id],
+    queryFn: () => client.get(`/students/${id}/attendance`).then(r => r.data),
+  });
+
   const addNote = useMutation({
     mutationFn: (body: string) => client.post(`/students/${id}/notes`, { body }).then(r => r.data),
     onSuccess: () => {
@@ -226,6 +231,47 @@ export default function StudentDetailPage() {
                 </div>
               </div>
             )}
+
+            {/* Attendance history + summary */}
+            <div className="mt-6 pt-6 border-t border-outline-variant/30">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="flex items-center gap-2 text-sm font-bold text-primary">
+                  <span className="material-symbols-outlined text-[20px]">event_available</span>
+                  {t('students.attendanceHistory')}
+                </h3>
+                {attendance && attendance.summary.total > 0 && (
+                  <div className="flex items-center gap-2 text-[11px] font-bold">
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">{t('students.attPresent')} {attendance.summary.present}</span>
+                    <span className="px-2 py-0.5 rounded-full bg-error/10 text-error">{t('students.attAbsent')} {attendance.summary.absent}</span>
+                    {attendance.summary.excused > 0 && (
+                      <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">{t('students.attExcused')} {attendance.summary.excused}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+              {!attendance || attendance.records.length === 0 ? (
+                <p className="text-sm text-on-surface-variant py-4 text-center">{t('students.noAttendance')}</p>
+              ) : (
+                <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+                  {attendance.records.map((r: any) => {
+                    const dt = new Date(r.starts_at);
+                    const dot = r.status === 'present' ? 'bg-emerald-500' : r.status === 'absent' ? 'bg-error' : 'bg-orange-400';
+                    return (
+                      <div key={r.attendance_id} className="flex items-center gap-3 px-3 py-2 rounded-xl bg-surface-container-low">
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
+                        <span className="text-sm font-semibold text-on-surface w-28 shrink-0">
+                          {dt.getDate()} {t(`date.months.${dt.getMonth() + 1}`)} {dt.getFullYear()}
+                        </span>
+                        <span className="text-xs text-on-surface-variant flex-1 truncate">{r.course_name}</span>
+                        <span className={`text-[11px] font-bold capitalize ${r.status === 'present' ? 'text-emerald-700' : r.status === 'absent' ? 'text-error' : 'text-orange-700'}`}>
+                          {t(`students.att${r.status.charAt(0).toUpperCase() + r.status.slice(1)}`)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right column: packages + notes */}

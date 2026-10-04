@@ -1,6 +1,6 @@
 import axios, { InternalAxiosRequestConfig } from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://192.168.1.104:3000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
 const client = axios.create({
   baseURL: API_URL,
   headers: { 'ngrok-skip-browser-warning': 'true' },

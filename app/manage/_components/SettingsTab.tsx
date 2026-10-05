@@ -191,10 +191,12 @@ export default function SettingsTab() {
                   <button onClick={() => openRt(rt)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors">
                     <span className="material-symbols-outlined text-[14px]">edit</span>
                   </button>
-                  <button onClick={() => setDelTarget({ kind: 'robot', id: rt.robot_type_id, name: rt.name })}
-                    className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-error-container text-on-surface-variant hover:text-error transition-colors">
-                    <span className="material-symbols-outlined text-[14px]">delete</span>
-                  </button>
+                  {isOwner && (
+                    <button onClick={() => setDelTarget({ kind: 'robot', id: rt.robot_type_id, name: rt.name })}
+                      className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-error-container text-on-surface-variant hover:text-error transition-colors">
+                      <span className="material-symbols-outlined text-[14px]">delete</span>
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -228,10 +230,12 @@ export default function SettingsTab() {
                   <button onClick={() => openLv(lv)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors">
                     <span className="material-symbols-outlined text-[14px]">edit</span>
                   </button>
-                  <button onClick={() => setDelTarget({ kind: 'level', id: lv.level_id, name: lv.name })}
-                    className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-error-container text-on-surface-variant hover:text-error transition-colors">
-                    <span className="material-symbols-outlined text-[14px]">delete</span>
-                  </button>
+                  {isOwner && (
+                    <button onClick={() => setDelTarget({ kind: 'level', id: lv.level_id, name: lv.name })}
+                      className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-error-container text-on-surface-variant hover:text-error transition-colors">
+                      <span className="material-symbols-outlined text-[14px]">delete</span>
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

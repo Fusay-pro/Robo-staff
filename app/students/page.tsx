@@ -9,8 +9,11 @@ import { downloadCsv } from '@/lib/csv';
 import { useT } from '@/context/I18nContext';
 import { useAuth } from '@/context/AuthContext';
 import AddStudentModal from './_components/AddStudentModal';
+import BulkDeleteStudentsModal from './_components/BulkDeleteStudentsModal';
 
 const PAGE_SIZE = 20;
+// Cap on one bulk delete; mirrors BULK_DELETE_MAX on the API, which rejects more.
+const MAX_BULK_DELETE = 20;
 
 function initials(name: string) {
   return name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
@@ -26,6 +29,13 @@ export default function StudentsPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'pending' | 'archived'>('all');
   const [page, setPage] = useState(0);
   const [accumulated, setAccumulated] = useState<any[]>([]);
+
+  // Bulk selection (owner only): cards stop navigating and become checkboxes
+  const [selectMode, setSelectMode]   = useState(false);
+  const [selected, setSelected]       = useState<Set<number>>(new Set());
+  const [selectingAll, setSelectingAll] = useState(false);
+  const [bulkOpen, setBulkOpen]       = useState(false);
+  const [notice, setNotice]           = useState('');
 
   useEffect(() => {
     const tm = setTimeout(() => { setDebouncedSearch(search); setPage(0); setAccumulated([]); }, 350);
@@ -75,6 +85,46 @@ export default function StudentsPage() {
   const total = pageData?.total ?? 0;
   const hasMore = displayList.length < total;
 
+  const filterQuery = `${approvalParam}${searchParam}`.replace(/^&/, '');
+
+  function toggleSelected(id: number) {
+    if (!selected.has(id) && selected.size >= MAX_BULK_DELETE) {
+      setNotice(t('students.selectMax'));
+      return;
+    }
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function exitSelectMode() {
+    setSelectMode(false);
+    setSelected(new Set());
+  }
+
+  // "Select all" must cover students on pages that were never loaded, so the ids
+  // come from the server using the same filters as the list — capped at the
+  // per-delete limit, so a big roster is cleared a batch at a time.
+  async function selectAllMatching() {
+    setSelectingAll(true);
+    try {
+      const { data } = await client.get(`/students/ids${filterQuery ? `?${filterQuery}` : ''}`);
+      const ids: number[] = data?.ids ?? [];
+      setSelected(new Set<number>(ids.slice(0, MAX_BULK_DELETE)));
+      setNotice(ids.length > MAX_BULK_DELETE ? t('students.selectMax') : '');
+    } catch {
+      setNotice(t('students.selectAllFailed'));
+    } finally {
+      setSelectingAll(false);
+    }
+  }
+
+  const selectedIds   = [...selected];
+  const nameById      = new Map<number, string>(displayList.map(s => [s.student_id, s.nickname || s.name]));
+  const previewNames  = selectedIds.map(id => nameById.get(id)).filter(Boolean) as string[];
+
   return (
     <AppShell>
       <div className="px-4 py-6 md:px-10 md:py-8 pb-24 md:pb-8 max-w-7xl mx-auto w-full">
@@ -89,6 +139,17 @@ export default function StudentsPage() {
                 className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:opacity-90 transition-opacity">
                 <span className="material-symbols-outlined text-[18px]">person_add</span>
                 <span className="hidden sm:inline">{t('students.addStudentTitle')}</span>
+              </button>
+            )}
+            {isOwner && (
+              <button onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors border ${
+                  selectMode
+                    ? 'bg-error/10 border-error/40 text-error'
+                    : 'bg-surface-container-lowest border-outline-variant/40 text-on-surface hover:bg-surface-container hover:border-primary/40'
+                }`}>
+                <span className="material-symbols-outlined text-[18px]">{selectMode ? 'close' : 'checklist'}</span>
+                <span className="hidden sm:inline">{selectMode ? t('common.cancel') : t('students.selectLabel')}</span>
               </button>
             )}
           <button onClick={() => downloadCsv('students', displayList, [
@@ -146,12 +207,12 @@ export default function StudentsPage() {
             <span className="material-symbols-outlined text-on-surface-variant text-[18px]">search</span>
             <input
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={e => { setSearch(e.target.value); setSelected(new Set()); }}
               placeholder={t('students.searchByName')}
               className="bg-transparent border-none outline-none text-sm text-on-surface placeholder:text-on-surface-variant flex-1"
             />
             {search && (
-              <button onClick={() => setSearch('')} className="text-on-surface-variant hover:text-on-surface">
+              <button onClick={() => { setSearch(''); setSelected(new Set()); }} className="text-on-surface-variant hover:text-on-surface">
                 <span className="material-symbols-outlined text-[16px]">close</span>
               </button>
             )}
@@ -159,7 +220,7 @@ export default function StudentsPage() {
 
           <div className="flex gap-1 bg-surface-container-lowest rounded-xl p-1 border border-outline-variant/20">
             {(['all', 'approved', 'pending', 'archived'] as const).map(s => (
-              <button key={s} onClick={() => setStatusFilter(s)}
+              <button key={s} onClick={() => { setStatusFilter(s); setSelected(new Set()); }}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-bold capitalize transition-colors ${
                   statusFilter === s
                     ? 'bg-primary text-white shadow-sm'
@@ -170,6 +231,38 @@ export default function StudentsPage() {
             ))}
           </div>
         </div>
+
+        {notice && (
+          <div className="mb-4 flex items-center gap-2 rounded-2xl border border-outline-variant/40 bg-surface-container-lowest px-4 py-3">
+            <span className="material-symbols-outlined text-[18px] text-primary">info</span>
+            <p className="text-sm font-semibold text-on-surface flex-1">{notice}</p>
+            <button onClick={() => setNotice('')} className="text-on-surface-variant hover:text-on-surface">
+              <span className="material-symbols-outlined text-[16px]">close</span>
+            </button>
+          </div>
+        )}
+
+        {/* Bulk selection action bar */}
+        {selectMode && (
+          <div className="sticky top-2 z-20 mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-error/30 bg-surface-container-lowest/95 backdrop-blur px-4 py-3 shadow-sm">
+            <p className="text-sm font-bold text-on-surface mr-auto">
+              {selected.size} / {MAX_BULK_DELETE} {t('students.selectedCount')}
+            </p>
+            <button onClick={selectAllMatching} disabled={selectingAll || total === 0}
+              className="px-3.5 py-2 rounded-xl border border-outline-variant/40 text-xs font-bold text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50">
+              {selectingAll ? t('students.loading') : `${t('students.selectAll')} (${Math.min(total, MAX_BULK_DELETE)})`}
+            </button>
+            <button onClick={() => setSelected(new Set())} disabled={selected.size === 0}
+              className="px-3.5 py-2 rounded-xl border border-outline-variant/40 text-xs font-bold text-on-surface-variant hover:bg-surface-container transition-colors disabled:opacity-50">
+              {t('students.clearSelection')}
+            </button>
+            <button onClick={() => setBulkOpen(true)} disabled={selected.size === 0}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-error text-white text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50">
+              <span className="material-symbols-outlined text-[16px]">delete</span>
+              {t('students.deleteSelected')}
+            </button>
+          </div>
+        )}
 
         {/* Cards grid */}
         {isLoading && page === 0 ? (
@@ -190,10 +283,20 @@ export default function StudentsPage() {
                 const classesLeft = s.classes_remaining ?? 0;
                 const barPct = Math.min((classesLeft / 10) * 100, 100);
                 const isLow = classesLeft > 0 && classesLeft <= 2;
+                const checked = selected.has(s.student_id);
+                const cardClass = `group bg-surface-container-lowest rounded-2xl p-5 border shadow-sm transition-all flex gap-4 ${
+                  checked ? 'border-error/60 ring-2 ring-error/20' : 'border-outline-variant/30 hover:border-primary/40'
+                } ${selectMode ? 'cursor-pointer' : 'hover:-translate-y-0.5 hover:shadow-md'}`;
 
-                return (
-                  <Link key={s.student_id} href={`/students/${s.student_id}`}
-                    className="group bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/30 shadow-sm hover:border-primary/40 hover:-translate-y-0.5 hover:shadow-md transition-all flex gap-4">
+                const body = (
+                  <>
+                    {selectMode && (
+                      <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center shrink-0 self-start mt-1 transition-colors ${
+                        checked ? 'bg-error border-error' : 'border-outline-variant bg-surface'
+                      }`}>
+                        {checked && <span className="material-symbols-outlined text-white text-[16px]">check</span>}
+                      </div>
+                    )}
                     <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-white text-lg font-bold shrink-0 shadow-md shadow-primary/20">
                       {(s.nickname || s.name) ? initials(s.nickname || s.name) : '?'}
                     </div>
@@ -226,7 +329,9 @@ export default function StudentsPage() {
                             </span>
                           </div>
                         </div>
-                        <span className="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-primary transition-colors shrink-0">chevron_right</span>
+                        {!selectMode && (
+                          <span className="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-primary transition-colors shrink-0">chevron_right</span>
+                        )}
                       </div>
 
                       <div className="bg-surface-container rounded-xl px-4 py-2.5 mt-3 flex items-center justify-between gap-3">
@@ -245,6 +350,21 @@ export default function StudentsPage() {
                         </div>
                       </div>
                     </div>
+                  </>
+                );
+
+                return selectMode ? (
+                  <div key={s.student_id} role="checkbox" aria-checked={checked} tabIndex={0}
+                    onClick={() => toggleSelected(s.student_id)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSelected(s.student_id); }
+                    }}
+                    className={cardClass}>
+                    {body}
+                  </div>
+                ) : (
+                  <Link key={s.student_id} href={`/students/${s.student_id}`} className={cardClass}>
+                    {body}
                   </Link>
                 );
               })}
@@ -264,6 +384,20 @@ export default function StudentsPage() {
         )}
       </div>
       <AddStudentModal open={addOpen} onClose={() => setAddOpen(false)} />
+      {bulkOpen && selectedIds.length > 0 && (
+        <BulkDeleteStudentsModal
+          ids={selectedIds}
+          previewNames={previewNames}
+          onClose={() => setBulkOpen(false)}
+          onDeleted={(deleted) => {
+            setBulkOpen(false);
+            exitSelectMode();
+            setPage(0);
+            setAccumulated([]);
+            setNotice(`${t('students.bulkDeleteDone')} (${deleted})`);
+          }}
+        />
+      )}
     </AppShell>
   );
 }

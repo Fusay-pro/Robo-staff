@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import client from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 import type { Announcement } from './_types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
@@ -12,6 +13,8 @@ function resolveImg(u: string) {
 
 export default function AnnouncementsTab() {
   const qc = useQueryClient();
+  const { role } = useAuth();
+  const isOwner = role === 'owner' || role === 'super_owner';
   const [form, setForm] = useState({ title: '', body: '', image_url: '' });
   const [sendErr, setSendErr] = useState('');
   const [sendOk,  setSendOk]  = useState(false);
@@ -104,10 +107,12 @@ export default function AnnouncementsTab() {
                       className="w-7 h-7 flex items-center justify-center hover:bg-primary/10 text-on-surface-variant hover:text-primary rounded-lg transition-all">
                       <span className="material-symbols-outlined text-[16px]">visibility</span>
                     </button>
-                    <button onClick={() => setDelTarget(a)}
-                      className="w-7 h-7 flex items-center justify-center hover:bg-error/10 text-on-surface-variant hover:text-error rounded-lg transition-all">
-                      <span className="material-symbols-outlined text-[16px]">delete</span>
-                    </button>
+                    {isOwner && (
+                      <button onClick={() => setDelTarget(a)}
+                        className="w-7 h-7 flex items-center justify-center hover:bg-error/10 text-on-surface-variant hover:text-error rounded-lg transition-all">
+                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

@@ -2,10 +2,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import client from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 import type { Course, RobotType, Level } from './_types';
 
 export default function CoursesTab() {
   const qc = useQueryClient();
+  const { role } = useAuth();
+  const isOwner = role === 'owner' || role === 'super_owner';
   const [modal, setModal]       = useState<null | { editing?: Course }>(null);
   const [form, setForm]         = useState<Record<string, any>>({});
   const [formErr, setFormErr]   = useState('');
@@ -65,10 +68,12 @@ export default function CoursesTab() {
                   className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors">
                   <span className="material-symbols-outlined text-[15px]">edit</span>
                 </button>
-                <button onClick={() => setDelTarget(c)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-error/10 text-error transition-colors">
-                  <span className="material-symbols-outlined text-[15px]">delete</span>
-                </button>
+                {isOwner && (
+                  <button onClick={() => setDelTarget(c)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-error/10 text-error transition-colors">
+                    <span className="material-symbols-outlined text-[15px]">delete</span>
+                  </button>
+                )}
               </div>
             </div>
           ))}

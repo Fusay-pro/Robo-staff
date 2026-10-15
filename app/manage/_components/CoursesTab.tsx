@@ -34,7 +34,17 @@ export default function CoursesTab() {
 
   function save() {
     setFormErr('');
-    courseMut.mutate({ ...form, level_id: form.level_id ? +form.level_id : undefined, robot_type_id: form.robot_type_id ? +form.robot_type_id : undefined });
+    // Send only the fields the API expects, converting blanks/null to undefined
+    // (a loaded course row has description/level_id/robot_type_id = null, which
+    // the validator rejects if forwarded as-is).
+    const payload: Record<string, any> = {
+      name:          (form.name || '').trim(),
+      description:   form.description?.trim() || undefined,
+      level_id:      form.level_id ? +form.level_id : undefined,
+      robot_type_id: form.robot_type_id ? +form.robot_type_id : undefined,
+    };
+    if (form.course_id) payload.course_id = form.course_id;
+    courseMut.mutate(payload);
   }
 
   return (

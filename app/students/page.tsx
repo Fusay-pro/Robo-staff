@@ -11,7 +11,7 @@ import { useAuth } from '@/context/AuthContext';
 import AddStudentModal from './_components/AddStudentModal';
 import BulkDeleteStudentsModal from './_components/BulkDeleteStudentsModal';
 
-const PAGE_SIZE_OPTIONS = [20, 50, 100];
+const PAGE_SIZE = 50;   // students shown per load/round
 // Cap on one bulk delete; mirrors BULK_DELETE_MAX on the API, which rejects more.
 const MAX_BULK_DELETE = 20;
 
@@ -27,7 +27,6 @@ export default function StudentsPage() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'pending' | 'archived'>('all');
-  const [pageSize, setPageSize] = useState(50);
   const [page, setPage] = useState(0);
   const [accumulated, setAccumulated] = useState<any[]>([]);
 
@@ -43,7 +42,7 @@ export default function StudentsPage() {
     return () => clearTimeout(tm);
   }, [search]);
 
-  useEffect(() => { setPage(0); setAccumulated([]); }, [statusFilter, pageSize]);
+  useEffect(() => { setPage(0); setAccumulated([]); }, [statusFilter]);
 
   const { data: statsData } = useQuery<any>({
     queryKey: ['students-stats'],
@@ -58,9 +57,9 @@ export default function StudentsPage() {
   const searchParam = debouncedSearch ? `&search=${encodeURIComponent(debouncedSearch)}` : '';
 
   const { data: pageData, isLoading, isFetching } = useQuery<{ data: any[]; total: number }>({
-    queryKey: ['students-list', debouncedSearch, statusFilter, pageSize, page],
+    queryKey: ['students-list', debouncedSearch, statusFilter, page],
     queryFn: () =>
-      client.get(`/students?limit=${pageSize}&offset=${page * pageSize}${approvalParam}${searchParam}`)
+      client.get(`/students?limit=${PAGE_SIZE}&offset=${page * PAGE_SIZE}${approvalParam}${searchParam}`)
         .then(r => ({ data: r.data?.data ?? [], total: r.data?.total ?? 0 })),
   });
 
@@ -228,18 +227,6 @@ export default function StudentsPage() {
                     : 'text-on-surface-variant hover:text-on-surface'
                 }`}>
                 {t(`students.tab.${s}`)}
-              </button>
-            ))}
-          </div>
-
-          {/* Page size: how many students load per round */}
-          <div className="flex items-center gap-1 bg-surface-container-lowest rounded-xl p-1 border border-outline-variant/20">
-            {PAGE_SIZE_OPTIONS.map(n => (
-              <button key={n} onClick={() => setPageSize(n)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                  pageSize === n ? 'bg-primary text-white shadow-sm' : 'text-on-surface-variant hover:text-on-surface'
-                }`}>
-                {n}
               </button>
             ))}
           </div>

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { pageWindow } from './pagination.ts';
+import { pageWindow, clampPage, offsetsFor } from './pagination.ts';
 
 test('no gaps when every page fits', () => {
   assert.deepEqual(pageWindow(3, 5), [1, 2, 3, 4, 5]);
@@ -37,4 +37,25 @@ test('degenerate totals', () => {
 test('current outside the range is clamped, not trusted', () => {
   assert.deepEqual(pageWindow(99, 12), [1, 'gap', 8, 9, 10, 11, 12]);
   assert.deepEqual(pageWindow(0, 12), [1, 2, 3, 4, 5, 'gap', 12]);
+});
+
+test('clampPage keeps a page index inside a list that shrank', () => {
+  // The roster lost pages under the viewer: land on the new last page.
+  assert.equal(clampPage(4, 2), 1);
+  assert.equal(clampPage(9, 1), 0);
+  // Nothing left to show: page 0, not -1.
+  assert.equal(clampPage(3, 0), 0);
+  // Already in range, or at the last page: untouched.
+  assert.equal(clampPage(0, 5), 0);
+  assert.equal(clampPage(4, 5), 4);
+  // Never returns a negative index, whatever it is handed.
+  assert.equal(clampPage(-2, 5), 0);
+});
+
+test('offsetsFor walks every row of a list in request-sized steps', () => {
+  assert.deepEqual(offsetsFor(0, 200), []);
+  assert.deepEqual(offsetsFor(50, 200), [0]);
+  assert.deepEqual(offsetsFor(200, 200), [0]);
+  assert.deepEqual(offsetsFor(201, 200), [0, 200]);
+  assert.deepEqual(offsetsFor(640, 200), [0, 200, 400, 600]);
 });

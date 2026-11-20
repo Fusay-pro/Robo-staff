@@ -10,6 +10,27 @@ export const PAGE_SIZE = 50;   // students per page; one page is also one bulk d
 // run of pages to render as a non-interactive ellipsis.
 export type PageSlot = number | 'gap';
 
+// The page index to actually show, given how many pages there turned out to be.
+// A list can shrink under the viewer — a delete here, a delete in another tab —
+// and the stored index then points past the end. Clamping at render time means
+// the view is always a page that exists, with no corrective state update and no
+// window where an empty list has nothing to navigate with. 0-based, like the
+// `page` state that feeds it.
+export function clampPage(page: number, totalPages: number): number {
+  if (totalPages < 1) return 0;
+  return Math.min(Math.max(page, 0), totalPages - 1);
+}
+
+// Offsets that walk a list of `total` rows in `limit`-sized requests. Used to
+// pull every row matching the current filters when the page on screen is only
+// a slice of them.
+export function offsetsFor(total: number, limit: number): number[] {
+  if (total < 1 || limit < 1) return [];
+  const out: number[] = [];
+  for (let offset = 0; offset < total; offset += limit) out.push(offset);
+  return out;
+}
+
 // Total buttons the pager shows once pages are collapsed: first, gap, three
 // around the current page, gap, last. Fixed so the row keeps a steady width
 // instead of twitching as you walk through the pages.

@@ -2,18 +2,19 @@
 
 import AppShell from '@/components/AppShell';
 import { useQuery } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import client from '@/lib/api';
 import { downloadCsv } from '@/lib/csv';
+import { PAGE_SIZE, pageWindow } from '@/lib/pagination';
 import { useT } from '@/context/I18nContext';
 import { useAuth } from '@/context/AuthContext';
 import AddStudentModal from './_components/AddStudentModal';
 import BulkDeleteStudentsModal from './_components/BulkDeleteStudentsModal';
 
-const PAGE_SIZE = 50;   // students shown per load/round
-// Cap on one bulk delete; mirrors BULK_DELETE_MAX on the API, which rejects more.
-const MAX_BULK_DELETE = 20;
+// Cap on one bulk delete; mirrors BULK_DELETE_MAX on the API, which rejects
+// more. It is one page, so the whole page can go in one confirm.
+const MAX_BULK_DELETE = PAGE_SIZE;
 
 function initials(name: string) {
   return name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
@@ -27,22 +28,21 @@ export default function StudentsPage() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'pending' | 'archived'>('all');
-  const [page, setPage] = useState(0);
-  const [accumulated, setAccumulated] = useState<any[]>([]);
+  const [page, setPage] = useState(0);   // 0-based; the pager's buttons are 1-based
+  const listTop = useRef<HTMLDivElement>(null);
 
   // Bulk selection (owner only): cards stop navigating and become checkboxes
   const [selectMode, setSelectMode]   = useState(false);
   const [selected, setSelected]       = useState<Set<number>>(new Set());
-  const [selectingAll, setSelectingAll] = useState(false);
   const [bulkOpen, setBulkOpen]       = useState(false);
   const [notice, setNotice]           = useState('');
 
   useEffect(() => {
-    const tm = setTimeout(() => { setDebouncedSearch(search); setPage(0); setAccumulated([]); }, 350);
+    const tm = setTimeout(() => { setDebouncedSearch(search); setPage(0); }, 350);
     return () => clearTimeout(tm);
   }, [search]);
 
-  useEffect(() => { setPage(0); setAccumulated([]); }, [statusFilter]);
+  useEffect(() => { setPage(0); }, [statusFilter]);
 
   const { data: statsData } = useQuery<any>({
     queryKey: ['students-stats'],
@@ -63,33 +63,25 @@ export default function StudentsPage() {
         .then(r => ({ data: r.data?.data ?? [], total: r.data?.total ?? 0 })),
   });
 
-  // Merge page data into accumulated list
+  // Only the page being viewed is rendered. React Query keeps each page under
+  // its own key, so stepping back to a page already seen is served from cache.
+  const displayList = pageData?.data ?? [];
+  const total       = pageData?.total ?? 0;
+  const totalPages  = Math.ceil(total / PAGE_SIZE);
+
+  // Ticks never travel between pages: the confirm modal can only name the
+  // students on screen, so carrying a selection would delete invisible rows.
+  // Skips the first render so a fresh list is not scrolled or cleared.
+  const mounted = useRef(false);
   useEffect(() => {
-    if (!pageData?.data) return;
-    if (page === 0) {
-      setAccumulated(pageData.data);
-    } else {
-      setAccumulated(prev => {
-        const ids = new Set(prev.map((s: any) => s.student_id));
-        return [...prev, ...pageData.data.filter((s: any) => !ids.has(s.student_id))];
-      });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageData]);
-
-  // Always show at least the latest page data on first load (handles cached queries)
-  const displayList = page === 0 && accumulated.length === 0 && pageData?.data
-    ? pageData.data
-    : accumulated;
-
-  const total = pageData?.total ?? 0;
-  const hasMore = displayList.length < total;
-
-  const filterQuery = `${approvalParam}${searchParam}`.replace(/^&/, '');
+    if (!mounted.current) { mounted.current = true; return; }
+    setSelected(new Set());
+    listTop.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }, [page]);
 
   function toggleSelected(id: number) {
     if (!selected.has(id) && selected.size >= MAX_BULK_DELETE) {
-      setNotice(t('students.selectMax'));
+      setNotice(t('students.selectMax', { n: MAX_BULK_DELETE }));
       return;
     }
     setSelected(prev => {
@@ -104,21 +96,11 @@ export default function StudentsPage() {
     setSelected(new Set());
   }
 
-  // "Select all" must cover students on pages that were never loaded, so the ids
-  // come from the server using the same filters as the list — capped at the
-  // per-delete limit, so a big roster is cleared a batch at a time.
-  async function selectAllMatching() {
-    setSelectingAll(true);
-    try {
-      const { data } = await client.get(`/students/ids${filterQuery ? `?${filterQuery}` : ''}`);
-      const ids: number[] = data?.ids ?? [];
-      setSelected(new Set<number>(ids.slice(0, MAX_BULK_DELETE)));
-      setNotice(ids.length > MAX_BULK_DELETE ? t('students.selectMax') : '');
-    } catch {
-      setNotice(t('students.selectAllFailed'));
-    } finally {
-      setSelectingAll(false);
-    }
+  // One page is one delete, so "select all" means the rows on screen. A longer
+  // roster is cleared a page at a time.
+  function selectAllOnPage() {
+    setSelected(new Set<number>(displayList.map((s: any) => s.student_id)));
+    setNotice('');
   }
 
   const selectedIds   = [...selected];
@@ -246,11 +228,11 @@ export default function StudentsPage() {
         {selectMode && (
           <div className="sticky top-2 z-20 mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-error/30 bg-surface-container-lowest/95 backdrop-blur px-4 py-3 shadow-sm">
             <p className="text-sm font-bold text-on-surface mr-auto">
-              {selected.size} / {MAX_BULK_DELETE} {t('students.selectedCount')}
+              {selected.size} / {displayList.length} {t('students.selectedCount')}
             </p>
-            <button onClick={selectAllMatching} disabled={selectingAll || total === 0}
+            <button onClick={selectAllOnPage} disabled={displayList.length === 0}
               className="px-3.5 py-2 rounded-xl border border-outline-variant/40 text-xs font-bold text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50">
-              {selectingAll ? t('students.loading') : `${t('students.selectAll')} (${Math.min(total, MAX_BULK_DELETE)})`}
+              {`${t('students.selectAll')} (${displayList.length})`}
             </button>
             <button onClick={() => setSelected(new Set())} disabled={selected.size === 0}
               className="px-3.5 py-2 rounded-xl border border-outline-variant/40 text-xs font-bold text-on-surface-variant hover:bg-surface-container transition-colors disabled:opacity-50">
@@ -265,7 +247,7 @@ export default function StudentsPage() {
         )}
 
         {/* Cards grid */}
-        {isLoading && page === 0 ? (
+        {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {[1,2,3,4,5,6].map(i => <div key={i} className="h-40 bg-surface-container-low animate-pulse rounded-2xl" />)}
           </div>
@@ -276,7 +258,7 @@ export default function StudentsPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div ref={listTop} className="scroll-mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {displayList.map((s: any) => {
                 const isApproved = s.approval_status === 'approved';
                 const isPending  = s.approval_status === 'pending';
@@ -370,14 +352,47 @@ export default function StudentsPage() {
               })}
             </div>
 
-            {hasMore && (
-              <div className="mt-6 text-center">
-                <button
-                  onClick={() => setPage(p => p + 1)}
-                  disabled={isFetching}
-                  className="px-8 py-3 rounded-2xl bg-surface-container-lowest border border-outline-variant/20 text-sm font-bold text-on-surface hover:bg-surface-container hover:border-primary/20 transition-all disabled:opacity-50">
-                  {isFetching ? t('students.loading') : `${t('students.loadMore')} (${total - displayList.length} ${t('students.remaining')})`}
-                </button>
+            {totalPages > 1 && (
+              <div className="mt-8 flex flex-col items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setPage(p => Math.max(p - 1, 0))}
+                    disabled={page === 0 || isFetching}
+                    aria-label={t('students.prevPage')}
+                    className="w-10 h-10 flex items-center justify-center rounded-xl border border-outline-variant/40 text-on-surface hover:bg-surface-container transition-colors disabled:opacity-40 disabled:hover:bg-transparent">
+                    <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+                  </button>
+
+                  {pageWindow(page + 1, totalPages).map((slot, i) =>
+                    slot === 'gap' ? (
+                      <span key={`gap-${i}`} aria-hidden="true"
+                        className="w-10 h-10 flex items-end justify-center pb-2 text-on-surface-variant select-none">…</span>
+                    ) : (
+                      <button key={slot}
+                        onClick={() => setPage(slot - 1)}
+                        disabled={isFetching && slot !== page + 1}
+                        aria-current={slot === page + 1 ? 'page' : undefined}
+                        className={`w-10 h-10 rounded-xl text-sm font-bold transition-colors ${
+                          slot === page + 1
+                            ? 'bg-primary text-white shadow-sm shadow-primary/20'
+                            : 'border border-outline-variant/40 text-on-surface hover:bg-surface-container'
+                        }`}>
+                        {slot}
+                      </button>
+                    )
+                  )}
+
+                  <button
+                    onClick={() => setPage(p => Math.min(p + 1, totalPages - 1))}
+                    disabled={page >= totalPages - 1 || isFetching}
+                    aria-label={t('students.nextPage')}
+                    className="w-10 h-10 flex items-center justify-center rounded-xl border border-outline-variant/40 text-on-surface hover:bg-surface-container transition-colors disabled:opacity-40 disabled:hover:bg-transparent">
+                    <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+                  </button>
+                </div>
+                <p className="text-xs text-on-surface-variant">
+                  {t('students.pageOf', { page: page + 1, total: totalPages })}
+                </p>
               </div>
             )}
           </>
@@ -392,8 +407,12 @@ export default function StudentsPage() {
           onDeleted={(deleted) => {
             setBulkOpen(false);
             exitSelectMode();
-            setPage(0);
-            setAccumulated([]);
+            // Clearing the last page would leave us past the end of a shorter
+            // roster, so step back to whatever the last page is now. Staying
+            // put is right in every other case: the invalidated query refills
+            // this page with the students that follow.
+            const lastPage = Math.max(Math.ceil((total - deleted) / PAGE_SIZE) - 1, 0);
+            setPage(p => Math.min(p, lastPage));
             setNotice(`${t('students.bulkDeleteDone')} (${deleted})`);
           }}
         />

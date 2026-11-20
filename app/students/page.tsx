@@ -12,9 +12,12 @@ import { useAuth } from '@/context/AuthContext';
 import AddStudentModal from './_components/AddStudentModal';
 import BulkDeleteStudentsModal from './_components/BulkDeleteStudentsModal';
 
-// Cap on one bulk delete; mirrors BULK_DELETE_MAX on the API, which rejects
-// more. It is one page, so the whole page can go in one confirm.
-const MAX_BULK_DELETE = PAGE_SIZE;
+// How many students one delete may carry when the server has not said. The two
+// caps live in different repositories, so a server running code older than this
+// UI would reject a bigger batch outright — nothing deleted, and the roster back
+// on the next reload. 20 was the cap before it followed the page size, so it is
+// the value any server still out there is known to accept.
+const FALLBACK_BULK_DELETE = 20;
 
 function initials(name: string) {
   return name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
@@ -60,11 +63,16 @@ export default function StudentsPage() {
   const listQuery = (p: number) =>
     `/students?limit=${PAGE_SIZE}&offset=${p * PAGE_SIZE}${approvalParam}${searchParam}`;
 
-  const { data: pageData, isLoading, isFetching } = useQuery<{ data: any[]; total: number }>({
+  const { data: pageData, isLoading, isFetching } = useQuery<{ data: any[]; total: number; bulkDeleteMax: number }>({
     queryKey: ['students-list', debouncedSearch, statusFilter, page],
     queryFn: () =>
       client.get(listQuery(page))
-        .then(r => ({ data: r.data?.data ?? [], total: r.data?.total ?? 0 })),
+        .then(r => ({
+          data:  r.data?.data ?? [],
+          total: r.data?.total ?? 0,
+          // The list says what this server will accept in one delete.
+          bulkDeleteMax: r.data?.bulk_delete_max ?? FALLBACK_BULK_DELETE,
+        })),
     // Keep the page you were looking at on screen while the next one loads, so
     // the cards are not replaced by skeletons and the pager stays mounted.
     placeholderData: keepPreviousData,
@@ -74,6 +82,8 @@ export default function StudentsPage() {
   // its own key, so stepping back to a page already seen is served from cache.
   const displayList = pageData?.data ?? [];
   const total       = pageData?.total ?? 0;
+  // Never offer a batch this server would reject.
+  const maxBulkDelete = pageData?.bulkDeleteMax ?? FALLBACK_BULK_DELETE;
   const totalPages  = Math.ceil(total / PAGE_SIZE);
 
   // `page` is what was asked for; `shownPage` is the page that exists. A roster
@@ -95,8 +105,8 @@ export default function StudentsPage() {
   }, [shownPage]);
 
   function toggleSelected(id: number) {
-    if (!selected.has(id) && selected.size >= MAX_BULK_DELETE) {
-      setNotice(t('students.selectMax', { n: MAX_BULK_DELETE }));
+    if (!selected.has(id) && selected.size >= maxBulkDelete) {
+      setNotice(t('students.selectMax', { n: maxBulkDelete }));
       return;
     }
     setSelected(prev => {
@@ -149,8 +159,9 @@ export default function StudentsPage() {
   // One page is one delete, so "select all" means the rows on screen. A longer
   // roster is cleared a page at a time.
   function selectAllOnPage() {
-    setSelected(new Set<number>(displayList.map((s: any) => s.student_id)));
-    setNotice('');
+    const ids = displayList.map((s: any) => s.student_id).slice(0, maxBulkDelete);
+    setSelected(new Set<number>(ids));
+    setNotice(displayList.length > maxBulkDelete ? t('students.selectMax', { n: maxBulkDelete }) : '');
   }
 
   const nameById = new Map<number, string>(displayList.map(s => [s.student_id, s.nickname || s.name]));
@@ -273,11 +284,11 @@ export default function StudentsPage() {
         {selectMode && (
           <div className="sticky top-2 z-20 mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-error/30 bg-surface-container-lowest/95 backdrop-blur px-4 py-3 shadow-sm">
             <p className="text-sm font-bold text-on-surface mr-auto">
-              {selected.size} / {displayList.length} {t('students.selectedCount')}
+              {selected.size} / {Math.min(displayList.length, maxBulkDelete)} {t('students.selectedCount')}
             </p>
             <button onClick={selectAllOnPage} disabled={displayList.length === 0}
               className="px-3.5 py-2 rounded-xl border border-outline-variant/40 text-xs font-bold text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50">
-              {`${t('students.selectAll')} (${displayList.length})`}
+              {`${t('students.selectAll')} (${Math.min(displayList.length, maxBulkDelete)})`}
             </button>
             <button onClick={() => setSelected(new Set())} disabled={selected.size === 0}
               className="px-3.5 py-2 rounded-xl border border-outline-variant/40 text-xs font-bold text-on-surface-variant hover:bg-surface-container transition-colors disabled:opacity-50">

@@ -1,8 +1,9 @@
 'use client';
 import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import client from '@/lib/api';
+import { errorMessage } from '@/lib/errors';
 import { useT } from '@/context/I18nContext';
 
 interface Props {
@@ -14,14 +15,25 @@ interface Props {
 export default function DeleteStudentModal({ studentId, studentName, onClose }: Props) {
   const { t } = useT();
   const router = useRouter();
+  const qc = useQueryClient();
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [err, setErr]           = useState('');
 
   const mut = useMutation({
     mutationFn: () => client.delete(`/students/${studentId}`, { data: { password } }).then(r => r.data),
-    onSuccess: () => { router.push('/students'); },
-    onError:   (e: any) => setErr(e?.response?.data?.error || t('students.deleteError')),
+    onSuccess: () => {
+      // The list this returns to is served from cache. Without these the card
+      // for the student just deleted is still there and still clickable, and
+      // opening it hits a 404 — the "could not load student" screen, for a
+      // delete that worked. Drop this student's own cached entry too, so a
+      // browser Back does not render it either.
+      qc.invalidateQueries({ queryKey: ['students-list'] });
+      qc.invalidateQueries({ queryKey: ['students-stats'] });
+      qc.removeQueries({ queryKey: ['student', studentId] });
+      router.push('/students');
+    },
+    onError:   (e: unknown) => setErr(errorMessage(e, t('students.deleteError'))),
   });
 
   return (
@@ -42,7 +54,15 @@ export default function DeleteStudentModal({ studentId, studentName, onClose }: 
         <div className="px-6 py-5">
           <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">{t('sync.confirmPassword')}</label>
           <div className="flex items-center gap-2 rounded-xl border border-outline-variant bg-surface-container-low px-3 focus-within:border-error focus-within:ring-2 focus-within:ring-error/20 transition-all">
+            {/* `new-password` keeps the password manager from reading this
+                as a sign-in form — which is what makes it fill the saved
+                email into the search box behind the dialog — and stops it
+                offering to save a password the owner already has. */}
             <input type={showPass ? 'text' : 'password'} value={password}
+              name="confirm-owner-password"
+              autoComplete="new-password"
+              autoCorrect="off"
+              spellCheck={false}
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
               className="flex-1 bg-transparent py-2.5 text-sm text-on-surface outline-none" />

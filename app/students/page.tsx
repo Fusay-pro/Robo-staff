@@ -7,6 +7,7 @@ import Link from 'next/link';
 import client from '@/lib/api';
 import { downloadCsv } from '@/lib/csv';
 import { PAGE_SIZE, pageWindow, clampPage, offsetsFor } from '@/lib/pagination';
+import { errorMessage } from '@/lib/errors';
 import { useT } from '@/context/I18nContext';
 import { useAuth } from '@/context/AuthContext';
 import AddStudentModal from './_components/AddStudentModal';
@@ -37,7 +38,12 @@ export default function StudentsPage() {
   // Bulk selection (owner only): cards stop navigating and become checkboxes
   const [selectMode, setSelectMode]   = useState(false);
   const [selected, setSelected]       = useState<Set<number>>(new Set());
-  const [bulkOpen, setBulkOpen]       = useState(false);
+  // The confirm dialog owns the ids and names it was opened with. While they
+  // were derived from live state, anything that touched the selection behind
+  // the dialog unmounted it mid-password — including the browser's password
+  // manager autofilling the search box, which cleared the selection and
+  // filtered the roster down to nothing in the same keystroke.
+  const [bulkTarget, setBulkTarget]   = useState<{ ids: number[]; names: string[] } | null>(null);
   const [notice, setNotice]           = useState('');
   const [exporting, setExporting]     = useState(false);
 
@@ -52,6 +58,7 @@ export default function StudentsPage() {
     queryKey: ['students-stats'],
     queryFn: () => client.get('/students/stats').then(r => r.data),
     staleTime: 60_000,
+    enabled: !bulkTarget,
   });
 
   const approvalParam =
@@ -63,20 +70,37 @@ export default function StudentsPage() {
   const listQuery = (p: number) =>
     `/students?limit=${PAGE_SIZE}&offset=${p * PAGE_SIZE}${approvalParam}${searchParam}`;
 
-  const { data: pageData, isLoading, isFetching } = useQuery<{ data: any[]; total: number; bulkDeleteMax: number }>({
-    queryKey: ['students-list', debouncedSearch, statusFilter, page],
-    queryFn: () =>
-      client.get(listQuery(page))
-        .then(r => ({
-          data:  r.data?.data ?? [],
-          total: r.data?.total ?? 0,
-          // The list says what this server will accept in one delete.
-          bulkDeleteMax: r.data?.bulk_delete_max ?? FALLBACK_BULK_DELETE,
-        })),
-    // Keep the page you were looking at on screen while the next one loads, so
-    // the cards are not replaced by skeletons and the pager stays mounted.
-    placeholderData: keepPreviousData,
-  });
+  // `isError` is read, not ignored: a request that failed is not a roster with
+  // no students in it. Without this the list answered a dead tunnel, an expired
+  // session or a 500 with "No students found", which reads as every student
+  // having been deleted — and a delete is exactly when it was asked to refetch.
+  const { data: pageData, isLoading, isFetching, isError, error, refetch } =
+    useQuery<{ data: any[]; total: number; bulkDeleteMax: number; servedPage: number }>({
+      queryKey: ['students-list', debouncedSearch, statusFilter, page],
+      // Keep the roster steady while the user enters their password. Closing
+      // the confirmation resumes refreshes, including deletion invalidations.
+      enabled: !bulkTarget,
+      queryFn: async () => {
+        const first = await client.get(listQuery(page));
+        const total = first.data?.total ?? 0;
+        // The list says what this server will accept in one delete.
+        const bulkDeleteMax = first.data?.bulk_delete_max ?? FALLBACK_BULK_DELETE;
+        const lastPage = Math.max(Math.ceil(total / PAGE_SIZE) - 1, 0);
+        // An index past the end of a roster that shrank — a delete here, a
+        // delete in another tab — answers with an empty slice, and with one
+        // page left the pager is not rendered to climb back with. Serve the
+        // last page that exists instead, and say which page that was so the
+        // pager marks the page the cards actually came from.
+        if (page > lastPage) {
+          const corrected = await client.get(listQuery(lastPage));
+          return { data: corrected.data?.data ?? [], total, bulkDeleteMax, servedPage: lastPage };
+        }
+        return { data: first.data?.data ?? [], total, bulkDeleteMax, servedPage: page };
+      },
+      // Keep the page you were looking at on screen while the next one loads, so
+      // the cards are not replaced by skeletons and the pager stays mounted.
+      placeholderData: keepPreviousData,
+    });
 
   // Only the page being viewed is rendered. React Query keeps each page under
   // its own key, so stepping back to a page already seen is served from cache.
@@ -86,13 +110,13 @@ export default function StudentsPage() {
   const maxBulkDelete = pageData?.bulkDeleteMax ?? FALLBACK_BULK_DELETE;
   const totalPages  = Math.ceil(total / PAGE_SIZE);
 
-  // `page` is what was asked for; `shownPage` is the page that exists. A roster
-  // that shrank under the viewer — someone else's delete in another tab — leaves
-  // the stored index past the end, and the pager would otherwise highlight a
-  // page that is not there and read "Page 7 of 2". The pager's own arithmetic
-  // runs on the clamped value, so every button and arrow leads somewhere real
-  // and one click brings the list back.
-  const shownPage = clampPage(page, totalPages);
+  // `page` is what was asked for; `shownPage` is the page the cards actually
+  // came from. A roster that shrank under the viewer — someone else's delete in
+  // another tab — leaves the stored index past the end, and the pager would
+  // otherwise highlight a page that is not there and read "Page 7 of 2". The
+  // query reports the page it served, so the pager marks that one; the clamp is
+  // the fallback for a render before any response has arrived.
+  const shownPage = pageData?.servedPage ?? clampPage(page, totalPages);
 
   // Ticks never travel between pages: the confirm modal can only name the
   // students on screen, so carrying a selection would delete invisible rows.
@@ -149,8 +173,10 @@ export default function StudentsPage() {
       }
       downloadCsv('students', rows, CSV_COLUMNS);
       setNotice('');
-    } catch {
-      setNotice(t('students.exportFailed'));
+    } catch (e) {
+      // Say why, not just that it failed: the helper prefers the server's own
+      // sentence and falls back to this one.
+      setNotice(errorMessage(e, t('students.exportFailed')));
     } finally {
       setExporting(false);
     }
@@ -243,11 +269,22 @@ export default function StudentsPage() {
         <div className="flex flex-wrap items-center gap-3 mb-6">
           <div className="flex items-center gap-2 bg-surface-container-lowest rounded-xl px-3 py-2.5 border border-outline-variant/40 shadow-sm flex-1 min-w-52">
             <span className="material-symbols-outlined text-on-surface-variant text-[18px]">search</span>
+            {/* Not a login field. Without the attributes below, the browser's
+                password manager fills the saved email in here once the delete
+                dialog's password box has been on screen: the list then
+                searches for an email, matches nothing, and reports an empty
+                roster as "no students found". */}
             <input
+              type="search"
+              name="student-search"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              aria-label={t('students.searchByName')}
               value={search}
               onChange={e => { setSearch(e.target.value); setSelected(new Set()); }}
               placeholder={t('students.searchByName')}
-              className="bg-transparent border-none outline-none text-sm text-on-surface placeholder:text-on-surface-variant flex-1"
+              className="bg-transparent border-none outline-none text-sm text-on-surface placeholder:text-on-surface-variant flex-1 [&::-webkit-search-cancel-button]:hidden"
             />
             {search && (
               <button onClick={() => { setSearch(''); setSelected(new Set()); }} className="text-on-surface-variant hover:text-on-surface">
@@ -280,6 +317,23 @@ export default function StudentsPage() {
           </div>
         )}
 
+        {/* A refetch that failed while rows are still on screen: the cards below
+            are the last answer the API gave, so they can be out of date — the
+            students just deleted may still be among them. Say so instead of
+            letting stale cards pass for fresh ones. */}
+        {isError && displayList.length > 0 && (
+          <div className="mb-4 flex items-center gap-2 rounded-2xl border border-error/30 bg-error-container/20 px-4 py-3">
+            <span className="material-symbols-outlined text-[18px] text-error">cloud_off</span>
+            <p className="text-sm font-semibold text-on-surface flex-1">
+              {t('students.staleList')} {errorMessage(error, t('students.loadFailedHint'))}
+            </p>
+            <button onClick={() => refetch()} disabled={isFetching}
+              className="px-3 py-1.5 rounded-xl bg-error text-white text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50">
+              {t('common.retry')}
+            </button>
+          </div>
+        )}
+
         {/* Bulk selection action bar */}
         {selectMode && (
           <div className="sticky top-2 z-20 mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-error/30 bg-surface-container-lowest/95 backdrop-blur px-4 py-3 shadow-sm">
@@ -294,7 +348,8 @@ export default function StudentsPage() {
               className="px-3.5 py-2 rounded-xl border border-outline-variant/40 text-xs font-bold text-on-surface-variant hover:bg-surface-container transition-colors disabled:opacity-50">
               {t('students.clearSelection')}
             </button>
-            <button onClick={() => setBulkOpen(true)} disabled={selected.size === 0}
+            <button onClick={() => setBulkTarget({ ids: selectedIds, names: previewNames })}
+              disabled={selected.size === 0}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-error text-white text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50">
               <span className="material-symbols-outlined text-[16px]">delete</span>
               {t('students.deleteSelected')}
@@ -308,6 +363,19 @@ export default function StudentsPage() {
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {[1,2,3,4,5,6].map(i => <div key={i} className="h-40 bg-surface-container-low animate-pulse rounded-2xl" />)}
+          </div>
+        ) : isError && displayList.length === 0 ? (
+          <div className="py-16 text-center">
+            <span className="material-symbols-outlined text-5xl text-error block mb-3">cloud_off</span>
+            <p className="font-semibold text-on-surface mb-1">{t('students.loadFailed')}</p>
+            <p className="text-sm text-on-surface-variant mb-5 max-w-md mx-auto">
+              {errorMessage(error, t('students.loadFailedHint'))}
+            </p>
+            <button onClick={() => refetch()} disabled={isFetching}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50">
+              <span className="material-symbols-outlined text-[18px]">refresh</span>
+              {isFetching ? t('students.loading') : t('common.retry')}
+            </button>
           </div>
         ) : displayList.length === 0 ? (
           <div className="py-20 text-center">
@@ -457,24 +525,27 @@ export default function StudentsPage() {
         )}
       </div>
       <AddStudentModal open={addOpen} onClose={() => setAddOpen(false)} />
-      {bulkOpen && selectedIds.length > 0 && (
+      {bulkTarget && (
         <BulkDeleteStudentsModal
-          ids={selectedIds}
-          previewNames={previewNames}
-          onClose={() => setBulkOpen(false)}
+          ids={bulkTarget.ids}
+          previewNames={bulkTarget.names}
+          onClose={() => setBulkTarget(null)}
           onDeleted={(deleted, skipped) => {
-            setBulkOpen(false);
+            setBulkTarget(null);
             exitSelectMode();
             // Step back if this page is now past the end of a shorter roster.
-            // The clamp in render covers a stale count; this just avoids a
-            // visible empty page between the delete and the refetch.
+            // The query serves the last page that exists either way; this just
+            // avoids a visible jump between the delete and the refetch.
             setPage(clampPage(shownPage, Math.ceil((total - deleted) / PAGE_SIZE)));
             // The server skips ids that were already gone or belong to another
-            // branch, so the count it deleted can be smaller than what was
-            // ticked. Say so rather than letting the number look wrong.
+            // branch, so what it deleted can be fewer than what was ticked —
+            // and can be none at all. Say which happened rather than printing
+            // "Students deleted (0)".
             setNotice(
-              `${t('students.bulkDeleteDone')} (${deleted})` +
-              (skipped > 0 ? ` · ${t('students.bulkDeleteSkipped', { n: skipped })}` : '')
+              deleted === 0
+                ? t('students.bulkDeleteNone')
+                : `${t('students.bulkDeleteDone')} (${deleted})` +
+                  (skipped > 0 ? ` · ${t('students.bulkDeleteSkipped', { n: skipped })}` : '')
             );
           }}
         />

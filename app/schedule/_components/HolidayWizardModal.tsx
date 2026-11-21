@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import client from '@/lib/api';
+import { errorMessage } from '@/lib/errors';
 
 const CAL_DAYS = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
 const MONTHS   = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -57,7 +58,7 @@ export default function HolidayWizardModal({ onClose }: Props) {
       qc.invalidateQueries({ queryKey: ['holidays'] });
       onClose();
     },
-    onError: (e: any) => setHolError(e?.response?.data?.error || 'Failed to create holiday'),
+    onError: (e: unknown) => setHolError(errorMessage(e, 'Failed to create holiday')),
   });
 
   function pickHolDay(dateStr: string) {

@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import client from '@/lib/api';
+import { errorMessage } from '@/lib/errors';
 import { useT } from '@/context/I18nContext';
 
 interface Props {
@@ -9,7 +10,8 @@ interface Props {
   previewNames: string[];   // names for the selected students already loaded in the list
   onClose:      () => void;
   // `skipped` counts ids the server declined to touch — already soft-deleted,
-  // or outside the caller's branch.
+  // or outside the caller's branch. A delete that skipped everything is not a
+  // success, and the list must not report one.
   onDeleted:    (deleted: number, skipped: number) => void;
 }
 
@@ -33,7 +35,7 @@ export default function BulkDeleteStudentsModal({ ids, previewNames, onClose, on
       qc.invalidateQueries({ queryKey: ['students-stats'] });
       onDeleted(data?.deleted ?? ids.length, data?.skipped ?? 0);
     },
-    onError: (e: any) => setErr(e?.response?.data?.error || t('students.deleteError')),
+    onError: (e: unknown) => setErr(errorMessage(e, t('students.deleteError'))),
   });
 
   return (
@@ -70,7 +72,15 @@ export default function BulkDeleteStudentsModal({ ids, previewNames, onClose, on
             {t('sync.confirmPassword')}
           </label>
           <div className="flex items-center gap-2 rounded-xl border border-outline-variant bg-surface-container-low px-3 focus-within:border-error focus-within:ring-2 focus-within:ring-error/20 transition-all">
+            {/* `new-password` keeps the password manager from reading this
+                as a sign-in form — which is what makes it fill the saved
+                email into the search box behind the dialog — and stops it
+                offering to save a password the owner already has. */}
             <input type={showPass ? 'text' : 'password'} value={password}
+              name="confirm-owner-password"
+              autoComplete="new-password"
+              autoCorrect="off"
+              spellCheck={false}
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
               className="flex-1 bg-transparent py-2.5 text-sm text-on-surface outline-none" />

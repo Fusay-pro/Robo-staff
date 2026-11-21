@@ -23,15 +23,16 @@ export default function DeleteStudentModal({ studentId, studentName, onClose }: 
   const mut = useMutation({
     mutationFn: () => client.delete(`/students/${studentId}`, { data: { password } }).then(r => r.data),
     onSuccess: () => {
-      // The list this returns to is served from cache. Without these the card
-      // for the student just deleted is still there and still clickable, and
-      // opening it hits a 404 — the "could not load student" screen, for a
-      // delete that worked. Drop this student's own cached entry too, so a
-      // browser Back does not render it either.
+      // Leave this page before touching any cache, and never drop this
+      // student's own entry while this page is still mounted: doing that made
+      // the detail query refetch a student that no longer exists, and the 404
+      // painted "could not load student info" over a delete that had actually
+      // worked — leaving the page stuck there until it was reloaded by hand.
+      router.push('/students');
+      // The list and the stats belong to the page being navigated to, so
+      // marking them stale now means it arrives without the deleted card.
       qc.invalidateQueries({ queryKey: ['students-list'] });
       qc.invalidateQueries({ queryKey: ['students-stats'] });
-      qc.removeQueries({ queryKey: ['student', studentId] });
-      router.push('/students');
     },
     onError:   (e: unknown) => setErr(errorMessage(e, t('students.deleteError'))),
   });

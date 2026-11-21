@@ -35,7 +35,12 @@ export default function StudentsPage() {
   const [selectMode, setSelectMode]   = useState(false);
   const [selected, setSelected]       = useState<Set<number>>(new Set());
   const [selectingAll, setSelectingAll] = useState(false);
-  const [bulkOpen, setBulkOpen]       = useState(false);
+  // The confirm dialog owns the ids and names it was opened with. While they
+  // were derived from live state, anything that touched the selection behind
+  // the dialog unmounted it mid-password — including the browser's password
+  // manager autofilling the search box, which cleared the selection and
+  // filtered the roster down to nothing in the same keystroke.
+  const [bulkTarget, setBulkTarget]   = useState<{ ids: number[]; names: string[] } | null>(null);
   const [notice, setNotice]           = useState('');
 
   useEffect(() => {
@@ -49,7 +54,7 @@ export default function StudentsPage() {
     queryKey: ['students-stats'],
     queryFn: () => client.get('/students/stats').then(r => r.data),
     staleTime: 60_000,
-    enabled: !bulkOpen,
+    enabled: !bulkTarget,
   });
 
   const approvalParam =
@@ -67,7 +72,7 @@ export default function StudentsPage() {
       queryKey: ['students-list', debouncedSearch, statusFilter, page],
       // Keep the roster steady while the user enters their password. Closing
       // the confirmation resumes refreshes, including deletion invalidations.
-      enabled: !bulkOpen,
+      enabled: !bulkTarget,
       queryFn: () =>
         client.get(`/students?limit=${PAGE_SIZE}&offset=${page * PAGE_SIZE}${approvalParam}${searchParam}`)
           .then(r => ({ data: r.data?.data ?? [], total: r.data?.total ?? 0 })),
@@ -217,11 +222,22 @@ export default function StudentsPage() {
         <div className="flex flex-wrap items-center gap-3 mb-6">
           <div className="flex items-center gap-2 bg-surface-container-lowest rounded-xl px-3 py-2.5 border border-outline-variant/40 shadow-sm flex-1 min-w-52">
             <span className="material-symbols-outlined text-on-surface-variant text-[18px]">search</span>
+            {/* Not a login field. Without the attributes below, the browser's
+                password manager fills the saved email in here once the delete
+                dialog's password box has been on screen: the list then
+                searches for an email, matches nothing, and reports an empty
+                roster as "no students found". */}
             <input
+              type="search"
+              name="student-search"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              aria-label={t('students.searchByName')}
               value={search}
               onChange={e => { setSearch(e.target.value); setSelected(new Set()); }}
               placeholder={t('students.searchByName')}
-              className="bg-transparent border-none outline-none text-sm text-on-surface placeholder:text-on-surface-variant flex-1"
+              className="bg-transparent border-none outline-none text-sm text-on-surface placeholder:text-on-surface-variant flex-1 [&::-webkit-search-cancel-button]:hidden"
             />
             {search && (
               <button onClick={() => { setSearch(''); setSelected(new Set()); }} className="text-on-surface-variant hover:text-on-surface">
@@ -285,7 +301,8 @@ export default function StudentsPage() {
               className="px-3.5 py-2 rounded-xl border border-outline-variant/40 text-xs font-bold text-on-surface-variant hover:bg-surface-container transition-colors disabled:opacity-50">
               {t('students.clearSelection')}
             </button>
-            <button onClick={() => setBulkOpen(true)} disabled={selected.size === 0}
+            <button onClick={() => setBulkTarget({ ids: selectedIds, names: previewNames })}
+              disabled={selected.size === 0}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-error text-white text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50">
               <span className="material-symbols-outlined text-[16px]">delete</span>
               {t('students.deleteSelected')}
@@ -426,13 +443,13 @@ export default function StudentsPage() {
         )}
       </div>
       <AddStudentModal open={addOpen} onClose={() => setAddOpen(false)} />
-      {bulkOpen && selectedIds.length > 0 && (
+      {bulkTarget && (
         <BulkDeleteStudentsModal
-          ids={selectedIds}
-          previewNames={previewNames}
-          onClose={() => setBulkOpen(false)}
+          ids={bulkTarget.ids}
+          previewNames={bulkTarget.names}
+          onClose={() => setBulkTarget(null)}
           onDeleted={(deleted, skipped) => {
-            setBulkOpen(false);
+            setBulkTarget(null);
             exitSelectMode();
             setPage(0);
             setAccumulated([]);

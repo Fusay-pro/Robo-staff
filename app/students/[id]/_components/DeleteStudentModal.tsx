@@ -54,7 +54,15 @@ export default function DeleteStudentModal({ studentId, studentName, onClose }: 
         <div className="px-6 py-5">
           <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">{t('sync.confirmPassword')}</label>
           <div className="flex items-center gap-2 rounded-xl border border-outline-variant bg-surface-container-low px-3 focus-within:border-error focus-within:ring-2 focus-within:ring-error/20 transition-all">
+            {/* `new-password` keeps the password manager from reading this
+                as a sign-in form — which is what makes it fill the saved
+                email into the search box behind the dialog — and stops it
+                offering to save a password the owner already has. */}
             <input type={showPass ? 'text' : 'password'} value={password}
+              name="confirm-owner-password"
+              autoComplete="new-password"
+              autoCorrect="off"
+              spellCheck={false}
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
               className="flex-1 bg-transparent py-2.5 text-sm text-on-surface outline-none" />

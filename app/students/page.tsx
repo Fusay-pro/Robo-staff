@@ -46,6 +46,13 @@ export default function StudentsPage() {
   const [bulkTarget, setBulkTarget]   = useState<{ ids: number[]; names: string[] } | null>(null);
   const [notice, setNotice]           = useState('');
   const [exporting, setExporting]     = useState(false);
+  // The search box starts read-only. Chrome and Arc fill a saved email into
+  // the only text input on a page they hold a login for, whatever
+  // autoComplete says, and the roster then filters down to nothing and reads
+  // as "no students found" — with the delete that just ran looking like the
+  // cause. A read-only input is not an autofill candidate; one focus makes it
+  // editable, which is how a search box gets used anyway.
+  const [searchReady, setSearchReady] = useState(false);
 
   useEffect(() => {
     const tm = setTimeout(() => { setDebouncedSearch(search); setPage(0); }, 350);
@@ -283,6 +290,9 @@ export default function StudentsPage() {
               type="search"
               name="student-search"
               autoComplete="off"
+              readOnly={!searchReady}
+              onFocus={() => setSearchReady(true)}
+              onPointerDown={() => setSearchReady(true)}
               autoCorrect="off"
               spellCheck={false}
               aria-label={t('students.searchByName')}
@@ -385,7 +395,24 @@ export default function StudentsPage() {
         ) : displayList.length === 0 ? (
           <div className="py-20 text-center">
             <span className="material-symbols-outlined text-5xl text-outline block mb-3">person_search</span>
-            <p className="font-semibold text-on-surface-variant">{t('students.noFound')}</p>
+            {/* An empty roster and a roster hidden behind a search read the
+                same on screen, which is how a search box the browser filled by
+                itself passed for "every student is gone". Name the term that
+                is filtering, and offer one click out of it. */}
+            {debouncedSearch ? (
+              <>
+                <p className="font-semibold text-on-surface-variant">
+                  {t('students.noMatch', { q: debouncedSearch })}
+                </p>
+                <button onClick={() => { setSearch(''); setSelected(new Set()); }}
+                  className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 transition-opacity">
+                  <span className="material-symbols-outlined text-[18px]">close</span>
+                  {t('students.clearSearchCta')}
+                </button>
+              </>
+            ) : (
+              <p className="font-semibold text-on-surface-variant">{t('students.noFound')}</p>
+            )}
           </div>
         ) : (
           <>

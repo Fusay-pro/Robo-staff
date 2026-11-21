@@ -449,6 +449,11 @@ export const messages = {
     'students.lowOnClasses':       'Low on Classes',
     'students.searchByName':       'Search by name…',
     'students.noFound':            'No students found',
+    // Shown instead of the bare "no students found" whenever a search is
+    // filtering the roster, so a box the browser filled by itself explains
+    // the empty list rather than looking like the students are gone.
+    'students.noMatch':            'No students match “{q}”',
+    'students.clearSearchCta':     'Clear the search',
     'students.classesLeftLabel':   'Classes Left',
     'students.needsRenewal':       'Needs renewal',
     'students.loading':            'Loading…',
@@ -1278,6 +1283,8 @@ export const messages = {
     'students.lowOnClasses':       'คลาสใกล้หมด',
     'students.searchByName':       'ค้นหาด้วยชื่อ…',
     'students.noFound':            'ไม่พบนักเรียน',
+    'students.noMatch':            'ไม่พบนักเรียนที่ตรงกับ “{q}”',
+    'students.clearSearchCta':     'ล้างการค้นหา',
     'students.classesLeftLabel':   'คลาสเหลือ',
     'students.needsRenewal':       'ต้องต่ออายุ',
     'students.loading':            'กำลังโหลด…',

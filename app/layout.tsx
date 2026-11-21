@@ -3,6 +3,7 @@ import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { QueryProvider } from '@/context/QueryProvider';
 import { I18nProvider } from '@/context/I18nContext';
+import { ToastProvider } from '@/context/ToastContext';
 
 export const metadata: Metadata = {
   title: 'RoboKids Staff Portal',
@@ -22,7 +23,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <QueryProvider>
             <I18nProvider>
-              {children}
+              <ToastProvider>
+                {children}
+              </ToastProvider>
             </I18nProvider>
           </QueryProvider>
         </AuthProvider>

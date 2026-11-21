@@ -49,6 +49,7 @@ export default function StudentsPage() {
     queryKey: ['students-stats'],
     queryFn: () => client.get('/students/stats').then(r => r.data),
     staleTime: 60_000,
+    enabled: !bulkOpen,
   });
 
   const approvalParam =
@@ -64,6 +65,9 @@ export default function StudentsPage() {
   const { data: pageData, isLoading, isFetching, isError, error, refetch } =
     useQuery<{ data: any[]; total: number }>({
       queryKey: ['students-list', debouncedSearch, statusFilter, page],
+      // Keep the roster steady while the user enters their password. Closing
+      // the confirmation resumes refreshes, including deletion invalidations.
+      enabled: !bulkOpen,
       queryFn: () =>
         client.get(`/students?limit=${PAGE_SIZE}&offset=${page * PAGE_SIZE}${approvalParam}${searchParam}`)
           .then(r => ({ data: r.data?.data ?? [], total: r.data?.total ?? 0 })),
@@ -120,8 +124,10 @@ export default function StudentsPage() {
       const ids: number[] = data?.ids ?? [];
       setSelected(new Set<number>(ids.slice(0, MAX_BULK_DELETE)));
       setNotice(ids.length > MAX_BULK_DELETE ? t('students.selectMax') : '');
-    } catch {
-      setNotice(t('students.selectAllFailed'));
+    } catch (e) {
+      // Say why, not just that it failed: the helper prefers the server's own
+      // sentence and falls back to this one.
+      setNotice(errorMessage(e, t('students.selectAllFailed')));
     } finally {
       setSelectingAll(false);
     }

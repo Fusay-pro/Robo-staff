@@ -2,16 +2,20 @@
 import AppShell from '@/components/AppShell';
 import { useState } from 'react';
 import { useT } from '@/context/I18nContext';
+import { useAuth } from '@/context/AuthContext';
 import CoursesTab from './_components/CoursesTab';
 import EnrollTab from './_components/EnrollTab';
 import AnnouncementsTab from './_components/AnnouncementsTab';
 import StaffTab from './_components/StaffTab';
 import SettingsTab from './_components/SettingsTab';
+import LogsTab from './_components/LogsTab';
 
-type TabKey = 'courses' | 'enroll' | 'staff' | 'announcements' | 'settings';
+type TabKey = 'courses' | 'enroll' | 'staff' | 'announcements' | 'settings' | 'logs';
 
 export default function ManagePage() {
   const { t } = useT();
+  const { role } = useAuth();
+  const isOwner = role === 'owner' || role === 'super_owner';
   const [tab, setTab] = useState<TabKey>('courses');
 
   const TABS: { key: TabKey; label: string; icon: string }[] = [
@@ -20,6 +24,9 @@ export default function ManagePage() {
     { key: 'staff',         label: t('manage.tab.staff'),         icon: 'badge' },
     { key: 'announcements', label: t('manage.tab.announcements'), icon: 'campaign' },
     { key: 'settings',      label: t('manage.tab.settings'),      icon: 'tune' },
+    // Owner-only, like the delete controls. The API enforces it as well, so
+    // hiding the tab is convenience, not the access rule.
+    ...(isOwner ? [{ key: 'logs' as TabKey, label: t('manage.tab.logs'), icon: 'receipt_long' }] : []),
   ];
 
   return (
@@ -45,6 +52,7 @@ export default function ManagePage() {
         {tab === 'staff'         && <StaffTab />}
         {tab === 'announcements' && <AnnouncementsTab />}
         {tab === 'settings'      && <SettingsTab />}
+        {tab === 'logs' && isOwner && <LogsTab />}
       </div>
     </AppShell>
   );

@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import client from '@/lib/api';
+import { errorMessage, errorStatus } from '@/lib/errors';
 import { useAuth } from '@/context/AuthContext';
 import { useT } from '@/context/I18nContext';
 import AssignCourseModal from './_components/AssignCourseModal';
@@ -24,7 +25,7 @@ export default function StudentDetailPage() {
   const { t } = useT();
   const isOwner = role === 'owner' || role === 'super_owner';
 
-  const { data: student, isLoading, isError } = useQuery<any>({
+  const { data: student, isLoading, isFetching, isError, error, refetch } = useQuery<any>({
     queryKey: ['student', id],
     queryFn: () => client.get(`/students/${id}`).then(r => r.data),
   });
@@ -94,7 +95,9 @@ export default function StudentDetailPage() {
     );
   }
 
-  if (isError || !student) {
+  // A background failure still leaves usable cached data. Keep the page and
+  // any password confirmation mounted; only a confirmed 404 means it is gone.
+  if (!student || (isError && errorStatus(error) === 404)) {
     return (
       <AppShell>
         <div className="p-12 text-center">
@@ -114,6 +117,17 @@ export default function StudentDetailPage() {
   return (
     <AppShell>
       <div className="px-4 py-6 md:px-10 md:py-8 pb-24 md:pb-8 max-w-6xl mx-auto w-full">
+        {isError && (
+          <div role="status" className="mb-4 flex items-center gap-3 rounded-2xl border border-error/30 bg-error-container/20 px-4 py-3">
+            <p className="text-sm text-on-surface flex-1">
+              {errorMessage(error, t('students.staleInfo'))}
+            </p>
+            <button type="button" onClick={() => refetch()} disabled={isFetching}
+              className="px-3 py-1.5 rounded-xl bg-error text-white text-xs font-bold disabled:opacity-50">
+              {t('common.retry')}
+            </button>
+          </div>
+        )}
         {/* Back */}
         <button onClick={() => router.back()}
           className="flex items-center gap-1.5 text-sm font-semibold text-on-surface-variant hover:text-primary mb-6 transition-colors">

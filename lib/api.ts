@@ -1,5 +1,5 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios';
-import { errorKind, shouldToast } from './errors.ts';
+import { errorKind, errorStatus, shouldToast } from './errors.ts';
 import { emitToast } from './toastBus.ts';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
@@ -79,7 +79,20 @@ client.interceptors.response.use(
         return client(original);
       }
 
-      const accessToken = await refreshAccessToken();
+      let accessToken: string;
+      try {
+        accessToken = await refreshAccessToken();
+      } catch (renewalError) {
+        // This throw leaves the interceptor above its toast line, so without
+        // reporting here the most important failure of all — the tunnel being
+        // down — would be the silent one. A 401 on the renewal is different:
+        // the session is genuinely over and expireSession is already
+        // navigating to /login, which is the message.
+        if (errorStatus(renewalError) !== 401) {
+          emitToast({ tone: 'error', error: errorKind(renewalError) });
+        }
+        throw renewalError;
+      }
       original.headers.Authorization = `Bearer ${accessToken}`;
       return client(original);
     }

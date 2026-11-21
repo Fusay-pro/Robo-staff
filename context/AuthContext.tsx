@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { decodeJwt, isExpired, getAccessToken, setTokens, clearTokens } from '@/lib/auth';
-import client from '@/lib/api';
+import { refreshAccessToken } from '@/lib/api';
 
 interface AuthContextValue {
   token: string | null;
@@ -33,13 +33,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false); return;
     }
     if (refresh) {
-      client.post('/auth/refresh', { refresh_token: refresh })
-        .then(({ data }) => {
-          setTokens(data.access_token, data.refresh_token);
-          const payload = decodeJwt(data.access_token);
-          setToken(data.access_token); setRole(payload?.role ?? null); setUserId(payload?.sub ?? null); setName(payload?.name ?? null);
+      refreshAccessToken()
+        .then(access => {
+          const payload = decodeJwt(access);
+          setToken(access); setRole(payload?.role ?? null); setUserId(payload?.sub ?? null); setName(payload?.name ?? null);
         })
-        .catch(() => clearTokens())
+        .catch(() => {
+          // Renewal clears invalid credentials itself. Preserve them during a
+          // temporary outage so a later attempt can restore the session.
+        })
         .finally(() => setLoading(false));
     } else { clearTokens(); setLoading(false); }
   }, []);

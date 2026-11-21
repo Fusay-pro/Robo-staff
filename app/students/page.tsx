@@ -75,7 +75,7 @@ export default function StudentsPage() {
   // session or a 500 with "No students found", which reads as every student
   // having been deleted — and a delete is exactly when it was asked to refetch.
   const { data: pageData, isLoading, isFetching, isError, error, refetch } =
-    useQuery<{ data: any[]; total: number; bulkDeleteMax: number; servedPage: number }>({
+    useQuery<{ data: any[]; total: number; bulkDeleteMax: number }>({
       queryKey: ['students-list', debouncedSearch, statusFilter, page],
       // Keep the roster steady while the user enters their password. Closing
       // the confirmation resumes refreshes, including deletion invalidations.
@@ -89,13 +89,13 @@ export default function StudentsPage() {
         // An index past the end of a roster that shrank — a delete here, a
         // delete in another tab — answers with an empty slice, and with one
         // page left the pager is not rendered to climb back with. Serve the
-        // last page that exists instead, and say which page that was so the
-        // pager marks the page the cards actually came from.
+        // last page that exists instead, so the cards are never empty while
+        // students exist. `shownPage` clamps to the same index from `total`.
         if (page > lastPage) {
           const corrected = await client.get(listQuery(lastPage));
-          return { data: corrected.data?.data ?? [], total, bulkDeleteMax, servedPage: lastPage };
+          return { data: corrected.data?.data ?? [], total, bulkDeleteMax };
         }
-        return { data: first.data?.data ?? [], total, bulkDeleteMax, servedPage: page };
+        return { data: first.data?.data ?? [], total, bulkDeleteMax };
       },
       // Keep the page you were looking at on screen while the next one loads, so
       // the cards are not replaced by skeletons and the pager stays mounted.
@@ -110,13 +110,18 @@ export default function StudentsPage() {
   const maxBulkDelete = pageData?.bulkDeleteMax ?? FALLBACK_BULK_DELETE;
   const totalPages  = Math.ceil(total / PAGE_SIZE);
 
-  // `page` is what was asked for; `shownPage` is the page the cards actually
-  // came from. A roster that shrank under the viewer — someone else's delete in
-  // another tab — leaves the stored index past the end, and the pager would
-  // otherwise highlight a page that is not there and read "Page 7 of 2". The
-  // query reports the page it served, so the pager marks that one; the clamp is
-  // the fallback for a render before any response has arrived.
-  const shownPage = pageData?.servedPage ?? clampPage(page, totalPages);
+  // `page` is what was asked for; `shownPage` is the page that exists. A roster
+  // that shrank under the viewer — someone else's delete in another tab —
+  // leaves the stored index past the end, and the pager would otherwise
+  // highlight a page that is not there and read "Page 7 of 2".
+  //
+  // This is derived from `page`, NOT from the page the query reports serving.
+  // Reading it out of the response made it lag one fetch behind while
+  // `keepPreviousData` held the previous page on screen, and the arrows step
+  // from it: clicking page 10 and then the next arrow mid-flight abandoned the
+  // request and landed on page 4, and a second click on next re-set `page` to
+  // the value it already held, so React bailed out and the click vanished.
+  const shownPage = clampPage(page, totalPages);
 
   // Ticks never travel between pages: the confirm modal can only name the
   // students on screen, so carrying a selection would delete invisible rows.
@@ -349,7 +354,7 @@ export default function StudentsPage() {
               {t('students.clearSelection')}
             </button>
             <button onClick={() => setBulkTarget({ ids: selectedIds, names: previewNames })}
-              disabled={selected.size === 0}
+              disabled={selectedIds.length === 0}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-error text-white text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50">
               <span className="material-symbols-outlined text-[16px]">delete</span>
               {t('students.deleteSelected')}

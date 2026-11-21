@@ -2,13 +2,17 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import client from '@/lib/api';
+import { errorMessage } from '@/lib/errors';
 import { useT } from '@/context/I18nContext';
 
 interface Props {
   ids:          number[];
   previewNames: string[];   // names for the selected students already loaded in the list
   onClose:      () => void;
-  onDeleted:    (deleted: number) => void;
+  // `skipped` counts ids the server declined to touch — already soft-deleted,
+  // or outside the caller's branch. A delete that skipped everything is not a
+  // success, and the list must not report one.
+  onDeleted:    (deleted: number, skipped: number) => void;
 }
 
 const PREVIEW_LIMIT = 8;
@@ -26,12 +30,12 @@ export default function BulkDeleteStudentsModal({ ids, previewNames, onClose, on
   const mut = useMutation({
     mutationFn: () =>
       client.post('/students/bulk-delete', { password, student_ids: ids }).then(r => r.data),
-    onSuccess: (data: { deleted: number }) => {
+    onSuccess: (data: { deleted: number; skipped?: number }) => {
       qc.invalidateQueries({ queryKey: ['students-list'] });
       qc.invalidateQueries({ queryKey: ['students-stats'] });
-      onDeleted(data?.deleted ?? ids.length);
+      onDeleted(data?.deleted ?? ids.length, data?.skipped ?? 0);
     },
-    onError: (e: any) => setErr(e?.response?.data?.error || t('students.deleteError')),
+    onError: (e: unknown) => setErr(errorMessage(e, t('students.deleteError'))),
   });
 
   return (

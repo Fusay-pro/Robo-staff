@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import client from '@/lib/api';
 import { downloadCsv } from '@/lib/csv';
+import { errorMessage } from '@/lib/errors';
 import { useT } from '@/context/I18nContext';
 import { useAuth } from '@/context/AuthContext';
 import AddStudentModal from './_components/AddStudentModal';
@@ -56,12 +57,17 @@ export default function StudentsPage() {
     : `&approval_status=${statusFilter}`;
   const searchParam = debouncedSearch ? `&search=${encodeURIComponent(debouncedSearch)}` : '';
 
-  const { data: pageData, isLoading, isFetching } = useQuery<{ data: any[]; total: number }>({
-    queryKey: ['students-list', debouncedSearch, statusFilter, page],
-    queryFn: () =>
-      client.get(`/students?limit=${PAGE_SIZE}&offset=${page * PAGE_SIZE}${approvalParam}${searchParam}`)
-        .then(r => ({ data: r.data?.data ?? [], total: r.data?.total ?? 0 })),
-  });
+  // `isError` is read, not ignored: a request that failed is not a roster with
+  // no students in it. Without this the list answered a dead tunnel, an expired
+  // session or a 500 with "No students found", which reads as every student
+  // having been deleted — and a delete is exactly when it was asked to refetch.
+  const { data: pageData, isLoading, isFetching, isError, error, refetch } =
+    useQuery<{ data: any[]; total: number }>({
+      queryKey: ['students-list', debouncedSearch, statusFilter, page],
+      queryFn: () =>
+        client.get(`/students?limit=${PAGE_SIZE}&offset=${page * PAGE_SIZE}${approvalParam}${searchParam}`)
+          .then(r => ({ data: r.data?.data ?? [], total: r.data?.total ?? 0 })),
+    });
 
   // Merge page data into accumulated list
   useEffect(() => {
@@ -242,6 +248,23 @@ export default function StudentsPage() {
           </div>
         )}
 
+        {/* A refetch that failed while rows are still on screen: the cards below
+            are the last answer the API gave, so they can be out of date — the
+            students just deleted may still be among them. Say so instead of
+            letting stale cards pass for fresh ones. */}
+        {isError && displayList.length > 0 && (
+          <div className="mb-4 flex items-center gap-2 rounded-2xl border border-error/30 bg-error-container/20 px-4 py-3">
+            <span className="material-symbols-outlined text-[18px] text-error">cloud_off</span>
+            <p className="text-sm font-semibold text-on-surface flex-1">
+              {t('students.staleList')} {errorMessage(error, t('students.loadFailedHint'))}
+            </p>
+            <button onClick={() => refetch()} disabled={isFetching}
+              className="px-3 py-1.5 rounded-xl bg-error text-white text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50">
+              {t('common.retry')}
+            </button>
+          </div>
+        )}
+
         {/* Bulk selection action bar */}
         {selectMode && (
           <div className="sticky top-2 z-20 mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-error/30 bg-surface-container-lowest/95 backdrop-blur px-4 py-3 shadow-sm">
@@ -268,6 +291,19 @@ export default function StudentsPage() {
         {isLoading && page === 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {[1,2,3,4,5,6].map(i => <div key={i} className="h-40 bg-surface-container-low animate-pulse rounded-2xl" />)}
+          </div>
+        ) : isError && displayList.length === 0 ? (
+          <div className="py-16 text-center">
+            <span className="material-symbols-outlined text-5xl text-error block mb-3">cloud_off</span>
+            <p className="font-semibold text-on-surface mb-1">{t('students.loadFailed')}</p>
+            <p className="text-sm text-on-surface-variant mb-5 max-w-md mx-auto">
+              {errorMessage(error, t('students.loadFailedHint'))}
+            </p>
+            <button onClick={() => refetch()} disabled={isFetching}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50">
+              <span className="material-symbols-outlined text-[18px]">refresh</span>
+              {isFetching ? t('students.loading') : t('common.retry')}
+            </button>
           </div>
         ) : displayList.length === 0 ? (
           <div className="py-20 text-center">
@@ -389,12 +425,21 @@ export default function StudentsPage() {
           ids={selectedIds}
           previewNames={previewNames}
           onClose={() => setBulkOpen(false)}
-          onDeleted={(deleted) => {
+          onDeleted={(deleted, skipped) => {
             setBulkOpen(false);
             exitSelectMode();
             setPage(0);
             setAccumulated([]);
-            setNotice(`${t('students.bulkDeleteDone')} (${deleted})`);
+            // The server skips ids that were already gone or belong to another
+            // branch, so what it deleted can be fewer than what was ticked —
+            // and can be none at all. Say which happened rather than printing
+            // "Students deleted (0)".
+            setNotice(
+              deleted === 0
+                ? t('students.bulkDeleteNone')
+                : `${t('students.bulkDeleteDone')} (${deleted})` +
+                  (skipped > 0 ? ` · ${t('students.bulkDeleteSkipped', { n: skipped })}` : '')
+            );
           }}
         />
       )}
